@@ -1348,6 +1348,14 @@ function applyCMS(cms){
     const ad = document.getElementById('cms-footer-address'); if(ad && f.address) ad.innerHTML = sanitizeInlineHTML(f.address);
     const cp = document.getElementById('cms-footer-copy'); if(cp && f.copy) cp.textContent = f.copy;
   }
+
+  // ── COLORS
+  if(cms.colors){
+    const root = document.documentElement;
+    ['ink','bark','sand','cream','mist','gold','ocean','foam','palm','dusk','wellness'].forEach(k=>{
+      if(cms.colors[k]) root.style.setProperty('--'+k, cms.colors[k]);
+    });
+  }
 }
 
 /* ── Load CMS: cache first, then KV API ── */

@@ -143,6 +143,15 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
 .seo-title-prev { font-size:1.1rem; color:#1a0dab; margin-bottom:4px; font-weight:400; }
 .seo-desc-prev  { font-size:.78rem; color:#545454; line-height:1.5; }
 
+/* COLOR PICKER */
+.color-row { display:flex; align-items:center; gap:16px; padding:14px 0; border-bottom:1px solid var(--mist); }
+.color-row:last-child { border-bottom:none; }
+.color-swatch { width:44px; height:44px; border-radius:3px; border:1px solid var(--mist); cursor:pointer; padding:2px; background:none; flex-shrink:0; }
+.color-info { flex:1; }
+.color-name { font-size:.7rem; font-weight:400; letter-spacing:.1em; text-transform:uppercase; color:var(--bark); margin-bottom:3px; }
+.color-desc { font-size:.68rem; color:#999; font-weight:300; line-height:1.5; }
+.color-hex  { font-family:monospace; font-size:.75rem; color:#888; min-width:72px; text-align:right; }
+
 @media (max-width:900px){
   .sidebar { width:200px; }
   .main { margin-left:200px; padding:28px 24px; }
@@ -234,6 +243,10 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       <div class="nav-item" data-page="footer">
         <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm-7 3h2v2h-2V7zm0 3h2v2h-2v-2zM10 7h2v2h-2V7zm0 3h2v2h-2v-2zM7 7h2v2H7V7zm0 3h2v2H7v-2zm-1 5h12v-2H6v2zm14-5h-2V7h2v3z"/></svg>
         Footer
+      </div>
+      <div class="nav-item" data-page="colors">
+        <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.02-.23-.27-.38-.63-.38-1.02 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        Colors
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -526,6 +539,80 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       </div>
     </div>
 
+    <!-- COLORS -->
+    <div class="page" id="page-colors">
+      <div class="top-bar">
+        <div class="top-bar-left"><div class="page-title">Colors</div><div class="page-sub">Global brand palette. Every change applies across the entire website.</div></div>
+        <div class="top-bar-actions">
+          <button class="btn btn-revert" onclick="resetColors()">↩ Reset Defaults</button>
+          <button class="btn btn-primary" onclick="saveAll()">Save Changes</button>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">Brand Colors</div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-gold" value="#b8965a" oninput="syncHex('gold')">
+          <div class="color-info"><div class="color-name">Accent / Gold</div><div class="color-desc">Buttons, price highlights, borders, the cursor dot — the main brand accent used everywhere.</div></div>
+          <span class="color-hex" id="hex-gold">#b8965a</span>
+        </div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-bark" value="#2b2420" oninput="syncHex('bark')">
+          <div class="color-info"><div class="color-name">Dark Background</div><div class="color-desc">Navigation bar, footer, dark section backgrounds, and headings on light pages.</div></div>
+          <span class="color-hex" id="hex-bark">#2b2420</span>
+        </div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-sand" value="#f2ede4" oninput="syncHex('sand')">
+          <div class="color-info"><div class="color-name">Light Text</div><div class="color-desc">Text that sits on dark backgrounds — nav links, footer text, headings on dark sections.</div></div>
+          <span class="color-hex" id="hex-sand">#f2ede4</span>
+        </div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-cream" value="#faf8f3" oninput="syncHex('cream')">
+          <div class="color-info"><div class="color-name">Page Background</div><div class="color-desc">The main background of the whole website — the light canvas behind all content.</div></div>
+          <span class="color-hex" id="hex-cream">#faf8f3</span>
+        </div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-mist" value="#e8e2d8" oninput="syncHex('mist')">
+          <div class="color-info"><div class="color-name">Borders & Dividers</div><div class="color-desc">Subtle borders, divider lines, and light card backgrounds throughout the site.</div></div>
+          <span class="color-hex" id="hex-mist">#e8e2d8</span>
+        </div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-ink" value="#1c1c1a" oninput="syncHex('ink')">
+          <div class="color-info"><div class="color-name">Body Text</div><div class="color-desc">Main text color for paragraphs, labels, and body content on light backgrounds.</div></div>
+          <span class="color-hex" id="hex-ink">#1c1c1a</span>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">Accent Colors</div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-ocean" value="#1e3a3f" oninput="syncHex('ocean')">
+          <div class="color-info"><div class="color-name">Ocean / Deep Teal</div><div class="color-desc">Restaurant section background and deep contrast areas.</div></div>
+          <span class="color-hex" id="hex-ocean">#1e3a3f</span>
+        </div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-foam" value="#c8d8d4" oninput="syncHex('foam')">
+          <div class="color-info"><div class="color-name">Light Teal</div><div class="color-desc">Subtle teal accent used in highlights and secondary elements.</div></div>
+          <span class="color-hex" id="hex-foam">#c8d8d4</span>
+        </div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-palm" value="#2d4a30" oninput="syncHex('palm')">
+          <div class="color-info"><div class="color-name">Forest Green</div><div class="color-desc">Nature-themed accents and green-toned highlights.</div></div>
+          <span class="color-hex" id="hex-palm">#2d4a30</span>
+        </div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-dusk" value="#6b5c4e" oninput="syncHex('dusk')">
+          <div class="color-info"><div class="color-name">Warm Brown</div><div class="color-desc">Earthy mid-tone used in various design elements across the site.</div></div>
+          <span class="color-hex" id="hex-dusk">#6b5c4e</span>
+        </div>
+        <div class="color-row">
+          <input type="color" class="color-swatch" id="color-wellness" value="#3d5a47" oninput="syncHex('wellness')">
+          <div class="color-info"><div class="color-name">Wellness Green</div><div class="color-desc">Used in the yoga and wellness section backgrounds.</div></div>
+          <span class="color-hex" id="hex-wellness">#3d5a47</span>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -687,6 +774,11 @@ const DEFAULTS = {
     desc:'A boutique hotel built with passion by a Panamanian–Swiss family. Santa Catalina, Panama\'s Pacific coast.',
     address:'Via Catalina Farms<br>Santa Catalina<br>Veraguas, Panamá<br><br>relax@villacocopanama.com<br>+507 6858 3330',
     copy:'© 2025 Villa Coco Panama — All rights reserved'
+  },
+  colors: {
+    ink:'#1c1c1a', bark:'#2b2420', sand:'#f2ede4', cream:'#faf8f3',
+    mist:'#e8e2d8', gold:'#b8965a', ocean:'#1e3a3f', foam:'#c8d8d4',
+    palm:'#2d4a30', dusk:'#6b5c4e', wellness:'#3d5a47'
   }
 };
 
@@ -911,7 +1003,31 @@ function renderAll(){
   renderHero(); renderStory(); renderStats(); renderRooms();
   renderExperiences(); renderWellness(); renderFood(); renderHours();
   renderPool(); renderPackages(); renderTestimonials(); renderGallery();
-  renderSeo(); renderFooter();
+  renderSeo(); renderFooter(); renderColors();
+}
+
+function renderColors(){
+  const c = data.colors || {};
+  const D = DEFAULTS.colors;
+  ['ink','bark','sand','cream','mist','gold','ocean','foam','palm','dusk','wellness'].forEach(name=>{
+    const v = c[name] || D[name];
+    const input = document.getElementById('color-'+name);
+    const hex   = document.getElementById('hex-'+name);
+    if(input) input.value = v;
+    if(hex)   hex.textContent = v;
+  });
+}
+
+function syncHex(name){
+  const el  = document.getElementById('color-'+name);
+  const hex = document.getElementById('hex-'+name);
+  if(el && hex) hex.textContent = el.value;
+}
+
+function resetColors(){
+  data.colors = Object.assign({}, DEFAULTS.colors);
+  renderColors();
+  toast('Colors reset to defaults. Save to apply.', 'info');
 }
 
 function renderHero(){
@@ -1147,6 +1263,7 @@ function updateSeoPreview(){
 ═══════════════════════════════════════ */
 function g(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
 function gc(id){ const el=document.getElementById(id); return el?el.checked:false; }
+function g_color(name){ const el=document.getElementById('color-'+name); return el?el.value:''; }
 
 function collectAll(){
   data.seo = {
@@ -1235,6 +1352,12 @@ function collectAll(){
     logo:    g('footer-logo'),  desc: document.getElementById('footer-desc')?.value||'',
     address: document.getElementById('footer-address')?.value||'',
     copy:    g('footer-copy')
+  };
+  data.colors = {
+    ink: g_color('ink'), bark: g_color('bark'), sand: g_color('sand'),
+    cream: g_color('cream'), mist: g_color('mist'), gold: g_color('gold'),
+    ocean: g_color('ocean'), foam: g_color('foam'), palm: g_color('palm'),
+    dusk: g_color('dusk'), wellness: g_color('wellness')
   };
 }
 
