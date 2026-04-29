@@ -234,6 +234,10 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
         <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
         Gallery
       </div>
+      <div class="nav-item" data-page="videos">
+        <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+        Videos
+      </div>
 
       <div class="sidebar-section">Settings</div>
       <div class="nav-item" data-page="seo">
@@ -539,6 +543,21 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       </div>
     </div>
 
+    <!-- VIDEOS -->
+    <div class="page" id="page-videos">
+      <div class="top-bar">
+        <div class="top-bar-left"><div class="page-title">Videos</div><div class="page-sub">A dedicated video section on the site. Accepts YouTube, Vimeo, or direct .mp4 links.</div></div>
+        <div class="top-bar-actions"><button class="btn btn-outline" onclick="addVideo()">+ Add Video</button><button class="btn btn-primary" onclick="saveAll()">Save Changes</button></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Section Headers</div>
+        <div class="field"><label>Label</label><input type="text" id="videos-label" placeholder="Watch & Explore"></div>
+        <div class="field"><label>Title (HTML ok)</label><input type="text" id="videos-title" placeholder="Life at &lt;br&gt;&lt;i&gt;Villa Coco&lt;/i&gt;"></div>
+        <div class="field"><label>Subtitle</label><input type="text" id="videos-sub" placeholder="A glimpse into the magic."></div>
+      </div>
+      <div id="videos-list"></div>
+    </div>
+
     <!-- COLORS -->
     <div class="page" id="page-colors">
       <div class="top-bar">
@@ -775,6 +794,12 @@ const DEFAULTS = {
     address:'Via Catalina Farms<br>Santa Catalina<br>Veraguas, Panamá<br><br>relax@villacocopanama.com<br>+507 6858 3330',
     copy:'© 2025 Villa Coco Panama — All rights reserved'
   },
+  videos: {
+    label: 'Watch & Explore',
+    title: 'Life at<br><i>Villa Coco</i>',
+    sub:   'A glimpse into the magic.',
+    items: []
+  },
   colors: {
     ink:'#1c1c1a', bark:'#2b2420', sand:'#f2ede4', cream:'#faf8f3',
     mist:'#e8e2d8', gold:'#b8965a', ocean:'#1e3a3f', foam:'#c8d8d4',
@@ -1003,8 +1028,29 @@ function renderAll(){
   renderHero(); renderStory(); renderStats(); renderRooms();
   renderExperiences(); renderWellness(); renderFood(); renderHours();
   renderPool(); renderPackages(); renderTestimonials(); renderGallery();
-  renderSeo(); renderFooter(); renderColors();
+  renderSeo(); renderFooter(); renderColors(); renderVideos();
 }
+
+function renderVideos(){
+  const v = data.videos || {};
+  val('videos-label', v.label || DEFAULTS.videos.label);
+  val('videos-title', v.title || DEFAULTS.videos.title);
+  val('videos-sub',   v.sub   || DEFAULTS.videos.sub);
+  const list = document.getElementById('videos-list');
+  if(!list) return;
+  const items = v.items || [];
+  list.innerHTML = items.map((item,i)=>`
+    <div class="repeater-item">
+      <div class="repeater-header">
+        <div class="repeater-title">${item.title||'Video '+(i+1)}</div>
+        <button class="repeater-del" onclick="removeVideo(${i})">Remove</button>
+      </div>
+      <div class="field"><label>Video URL <span style="color:#aaa;font-weight:300;font-size:.65rem;">(YouTube, Vimeo, or .mp4 link)</span></label><input type="url" id="vid-url-${i}" value="${item.url||''}" placeholder="https://www.youtube.com/watch?v=..."></div>
+      <div class="field"><label>Title / Caption</label><input type="text" id="vid-title-${i}" value="${item.title||''}"></div>
+    </div>`).join('');
+}
+function addVideo(){ collectAll(); if(!data.videos) data.videos={}; if(!data.videos.items) data.videos.items=[]; data.videos.items.push({url:'',title:''}); renderVideos(); }
+function removeVideo(i){ collectAll(); data.videos.items.splice(i,1); renderVideos(); }
 
 function renderColors(){
   const c = data.colors || {};
@@ -1358,6 +1404,15 @@ function collectAll(){
     cream: g_color('cream'), mist: g_color('mist'), gold: g_color('gold'),
     ocean: g_color('ocean'), foam: g_color('foam'), palm: g_color('palm'),
     dusk: g_color('dusk'), wellness: g_color('wellness')
+  };
+  data.videos = {
+    label: g('videos-label'),
+    title: g('videos-title'),
+    sub:   g('videos-sub'),
+    items: ((data.videos||{}).items||[]).map((_,i)=>({
+      url:   g(`vid-url-${i}`),
+      title: g(`vid-title-${i}`)
+    }))
   };
 }
 

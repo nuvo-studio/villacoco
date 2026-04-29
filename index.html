@@ -468,6 +468,38 @@ a    { text-decoration: none; color: inherit; }
 .gi:hover img { transform:scale(1.06); }
 .gi-lbl { position:absolute; bottom:14px; left:14px; font-size:.52rem; letter-spacing:.2em; text-transform:uppercase; color:rgba(242,237,228,.48); font-weight:300; opacity:0; transition:opacity .4s; }
 .gi:hover .gi-lbl { opacity:1; }
+.gi-video { cursor:pointer; }
+.gi-play { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.28); pointer-events:none; transition:background .3s; }
+.gi:hover .gi-play { background:rgba(0,0,0,.46); }
+.gi-play-btn { width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.88); display:flex; align-items:center; justify-content:center; transition:transform .3s; }
+.gi:hover .gi-play-btn { transform:scale(1.1); }
+.gi-play-btn::after { content:''; border-left:16px solid var(--bark); border-top:10px solid transparent; border-bottom:10px solid transparent; margin-left:5px; }
+
+/* ══════════════════════════════════════════════════
+   VIDEOS SECTION
+══════════════════════════════════════════════════ */
+.videos-sec { padding:96px 72px; background:var(--cream); }
+.video-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; margin-top:44px; }
+.video-card { position:relative; aspect-ratio:16/9; overflow:hidden; cursor:pointer; background:var(--bark); }
+.video-card img { width:100%; height:100%; object-fit:cover; transition:transform .55s ease; }
+.video-card:hover img { transform:scale(1.05); }
+.video-play-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.28); transition:background .3s; }
+.video-card:hover .video-play-overlay { background:rgba(0,0,0,.48); }
+.video-play-circle { width:56px; height:56px; border-radius:50%; background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; transition:transform .3s; }
+.video-card:hover .video-play-circle { transform:scale(1.1); }
+.video-play-circle::after { content:''; border-left:20px solid var(--bark); border-top:12px solid transparent; border-bottom:12px solid transparent; margin-left:5px; }
+.video-card-lbl { position:absolute; bottom:0; left:0; right:0; padding:12px 16px; background:linear-gradient(transparent,rgba(0,0,0,.72)); color:var(--sand); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; font-weight:300; }
+.video-no-thumb { width:100%; height:100%; background:var(--bark); }
+
+/* ══════════════════════════════════════════════════
+   VIDEO MODAL
+══════════════════════════════════════════════════ */
+#video-modal { display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,.92); align-items:center; justify-content:center; }
+#video-modal.open { display:flex; }
+#video-modal-close { position:absolute; top:20px; right:28px; color:var(--sand); font-size:2.4rem; background:none; border:none; cursor:pointer; line-height:1; z-index:1; opacity:.8; transition:opacity .2s; }
+#video-modal-close:hover { opacity:1; }
+#video-modal-inner { width:min(90vw,960px); aspect-ratio:16/9; background:#000; }
+#video-modal-inner iframe, #video-modal-inner video { width:100%; height:100%; border:none; }
 
 /* ══════════════════════════════════════════════════
    CTA
@@ -591,6 +623,8 @@ footer { background:var(--bark); padding:76px 72px 36px; }
   .tcard { padding: 22px 16px; }
   .tcard.feat .tcard-text { font-size: .96rem; }
   .gallery { height: 160px; }
+  .videos-sec { padding:52px 18px; }
+  .video-grid { grid-template-columns:1fr; gap:12px; margin-top:24px; }
   .cta-sec { min-height: 55vh; }
   .cta-title { font-size: clamp(38px,12vw,66px); }
   .cta-btns { flex-direction: column; align-items: center; gap: 14px; }
@@ -899,6 +933,20 @@ footer { background:var(--bark); padding:76px 72px 36px; }
   <div class="gi"><img src="https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=600&q=80" alt="Surf"><span class="gi-lbl">La Punta</span></div>
 </div>
 
+<!-- ─── VIDEOS ───────────────────────────────── -->
+<section class="videos-sec" id="videos-sec" style="display:none;">
+  <span class="label rv" id="cms-videos-label">Watch &amp; Explore</span>
+  <h2 class="h2 rv d1" id="cms-videos-title">Life at<br><i>Villa Coco</i></h2>
+  <p class="body rv d2" id="cms-videos-sub" style="margin-top:18px;color:rgba(28,28,26,.6);"></p>
+  <div class="video-grid rv d3" id="cms-video-grid"></div>
+</section>
+
+<!-- VIDEO MODAL -->
+<div id="video-modal">
+  <button id="video-modal-close">×</button>
+  <div id="video-modal-inner"></div>
+</div>
+
 <!-- ─── CTA ────────────────────────────────── -->
 <section class="cta-sec">
   <div class="cta-bg" id="cms-cta-bg"></div>
@@ -1157,6 +1205,63 @@ function safeUrl(raw, fallback = ''){
   }
 }
 
+/* ═══════════════════════════════════════
+   VIDEO UTILITIES
+═══════════════════════════════════════ */
+function getYouTubeId(url){
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([^&?#\s]{11})/);
+  return m ? m[1] : null;
+}
+function getVimeoId(url){
+  const m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  return m ? m[1] : null;
+}
+function getVideoType(url){
+  if(!url) return null;
+  if(/youtube\.com|youtu\.be/.test(url)) return 'youtube';
+  if(/vimeo\.com/.test(url)) return 'vimeo';
+  if(/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) return 'direct';
+  return null;
+}
+function getVideoThumbnail(url){
+  const ytId = getYouTubeId(url);
+  if(ytId) return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+  return '';
+}
+function getEmbedUrl(url){
+  const ytId = getYouTubeId(url);
+  if(ytId) return `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1`;
+  const vimeoId = getVimeoId(url);
+  if(vimeoId) return `https://player.vimeo.com/video/${vimeoId}?autoplay=1`;
+  return url;
+}
+function openVideoModal(url){
+  const modal = document.getElementById('video-modal');
+  const inner = document.getElementById('video-modal-inner');
+  const type  = getVideoType(url);
+  inner.innerHTML = type === 'direct'
+    ? `<video src="${url}" controls autoplay></video>`
+    : `<iframe src="${getEmbedUrl(url)}" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeVideoModal(){
+  document.getElementById('video-modal-inner').innerHTML = '';
+  document.getElementById('video-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('video-modal-close').addEventListener('click', closeVideoModal);
+document.getElementById('video-modal').addEventListener('click', e=>{ if(e.target.id==='video-modal') closeVideoModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeVideoModal(); });
+
+// Delegated click for gallery videos and video cards
+document.addEventListener('click', e=>{
+  const gv = e.target.closest('.gi-video');
+  if(gv && gv.dataset.url){ openVideoModal(gv.dataset.url); return; }
+  const vc = e.target.closest('.video-card');
+  if(vc && vc.dataset.url){ openVideoModal(vc.dataset.url); }
+});
+
 function applyCMS(cms){
   if(!cms || !Object.keys(cms).length) return;
 
@@ -1333,11 +1438,43 @@ function applyCMS(cms){
   // ── GALLERY
   if(cms.gallery?.length){
     const strip = document.getElementById('cms-gallery');
-    if(strip) strip.innerHTML = cms.gallery.map(g=>`
-      <div class="gi">
-        <img src="${safeUrl(g.url, 'about:blank')}" alt="${escapeHTML(g.label||'')}">
+    if(strip) strip.innerHTML = cms.gallery.map(g=>{
+      const safe = safeUrl(g.url||'', 'about:blank');
+      if(getVideoType(g.url||'')){
+        const thumb = getVideoThumbnail(g.url||'');
+        return `<div class="gi gi-video" data-url="${safe}">
+          ${thumb ? `<img src="${thumb}" alt="${escapeHTML(g.label||'')}">` : `<div class="video-no-thumb"></div>`}
+          <div class="gi-play"><div class="gi-play-btn"></div></div>
+          <span class="gi-lbl">${escapeHTML(g.label||'')}</span>
+        </div>`;
+      }
+      return `<div class="gi">
+        <img src="${safe}" alt="${escapeHTML(g.label||'')}">
         <span class="gi-lbl">${escapeHTML(g.label||'')}</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
+  }
+
+  // ── VIDEOS
+  if(cms.videos?.items?.length){
+    const sec = document.getElementById('videos-sec');
+    if(sec){
+      sec.style.display = '';
+      const v = cms.videos;
+      const lbl = document.getElementById('cms-videos-label'); if(lbl && v.label) lbl.textContent = v.label;
+      const ttl = document.getElementById('cms-videos-title'); if(ttl && v.title) ttl.innerHTML = sanitizeInlineHTML(v.title);
+      const sub = document.getElementById('cms-videos-sub');   if(sub && v.sub)   sub.textContent = v.sub;
+      const grid = document.getElementById('cms-video-grid');
+      if(grid) grid.innerHTML = v.items.map(item=>{
+        const safe  = safeUrl(item.url||'');
+        const thumb = getVideoThumbnail(item.url||'');
+        return `<div class="video-card" data-url="${safe}">
+          ${thumb ? `<img src="${thumb}" alt="${escapeHTML(item.title||'')}">` : `<div class="video-no-thumb"></div>`}
+          <div class="video-play-overlay"><div class="video-play-circle"></div></div>
+          ${item.title ? `<div class="video-card-lbl">${escapeHTML(item.title)}</div>` : ''}
+        </div>`;
+      }).join('');
+    }
   }
 
   // ── FOOTER
