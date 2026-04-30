@@ -3,8 +3,10 @@
  * Cloudflare Pages Function
  *
  * GET  /api/cms        → public read of live content
+ * GET  /api/cms?action=stats  → read analytics summary (auth required)
  * GET  /api/cms?action=auth   → verify admin password (fallback for restricted hosts)
  * POST /api/cms?action=auth   → verify admin password
+ * POST /api/cms?action=track  → track pageview/click event
  * POST /api/cms        → save new content (auth required)
  * POST /api/cms?action=revert → revert to previous save (auth required)
  */
@@ -13,6 +15,8 @@ const MAX_JSON_CHARS = 300_000;
 const MAX_TEXT_CHARS = 8_000;
 const MAX_ITEMS = 50;
 const MAX_DEPTH = 8;
+const MAX_ANALYTICS_FIELD = 120;
+const ANALYTICS_KEY = 'cms_analytics';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -43,6 +47,18 @@ export async function onRequest(context) {
   const isAuthRoute = action === 'auth' || url.pathname.endsWith('/auth');
   const isRevertRoute = action === 'revert' || url.pathname.endsWith('/revert');
 
+  if (method === 'GET' && action === 'stats') {
+    if (!isAuthorized(request, env)) {
+      return json({ error: 'Unauthorized' }, 401, headers);
+    }
+    try {
+      const analytics = await readAnalytics(env);
+      return json(formatAnalytics(analytics), 200, headers);
+    } catch (e) {
+      return json({ error: 'Failed to read analytics' }, 500, headers);
+    }
+  }
+
   if (method === 'GET' && isAuthRoute) {
     if (!isAuthorized(request, env)) {
       return json({ error: 'Unauthorized' }, 401, headers);
@@ -62,6 +78,43 @@ export async function onRequest(context) {
 
   if (method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405, headers);
+  }
+
+  if (action === 'track') {
+    try {
+      const payload = await request.json();
+      const eventType = payload?.type === 'click' ? 'click' : payload?.type === 'pageview' ? 'pageview' : '';
+      if (!eventType) {
+        return json({ error: 'Invalid analytics event type' }, 400, headers);
+      }
+
+      const analytics = await readAnalytics(env);
+      const dayKey = new Date().toISOString().slice(0, 10);
+      const path = normalizeAnalyticsField(payload?.path, '/');
+      const label = normalizeAnalyticsField(payload?.label, 'Unknown');
+
+      analytics.totals.views += eventType === 'pageview' ? 1 : 0;
+      analytics.totals.clicks += eventType === 'click' ? 1 : 0;
+
+      if (eventType === 'pageview') {
+        analytics.byPath[path] = (analytics.byPath[path] || 0) + 1;
+      }
+      if (eventType === 'click') {
+        analytics.byClickLabel[label] = (analytics.byClickLabel[label] || 0) + 1;
+      }
+
+      if (!analytics.daily[dayKey]) {
+        analytics.daily[dayKey] = { views: 0, clicks: 0 };
+      }
+      analytics.daily[dayKey].views += eventType === 'pageview' ? 1 : 0;
+      analytics.daily[dayKey].clicks += eventType === 'click' ? 1 : 0;
+      analytics.updatedAt = new Date().toISOString();
+
+      await env.VILLA_COCO_CMS.put(ANALYTICS_KEY, JSON.stringify(analytics));
+      return json({ success: true }, 202, headers);
+    } catch (e) {
+      return json({ error: 'Failed to track event' }, 500, headers);
+    }
   }
 
   if (!isAuthorized(request, env)) {
@@ -108,6 +161,79 @@ export async function onRequest(context) {
 
 function isAuthorized(request, env) {
   return request.headers.get('X-Admin-Password') === env.ADMIN_PASSWORD;
+}
+
+async function readAnalytics(env) {
+  const raw = await env.VILLA_COCO_CMS.get(ANALYTICS_KEY);
+  if (!raw) {
+    return {
+      totals: { views: 0, clicks: 0 },
+      byPath: {},
+      byClickLabel: {},
+      daily: {},
+      updatedAt: null,
+    };
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      totals: {
+        views: Number(parsed?.totals?.views) || 0,
+        clicks: Number(parsed?.totals?.clicks) || 0,
+      },
+      byPath: parsed?.byPath && typeof parsed.byPath === 'object' ? parsed.byPath : {},
+      byClickLabel: parsed?.byClickLabel && typeof parsed.byClickLabel === 'object' ? parsed.byClickLabel : {},
+      daily: parsed?.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
+      updatedAt: typeof parsed?.updatedAt === 'string' ? parsed.updatedAt : null,
+    };
+  } catch (e) {
+    return {
+      totals: { views: 0, clicks: 0 },
+      byPath: {},
+      byClickLabel: {},
+      daily: {},
+      updatedAt: null,
+    };
+  }
+}
+
+function normalizeAnalyticsField(value, fallback) {
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim().replace(/\s+/g, ' ');
+  if (!trimmed) return fallback;
+  return trimmed.slice(0, MAX_ANALYTICS_FIELD);
+}
+
+function formatAnalytics(analytics) {
+  const topPages = Object.entries(analytics.byPath || {})
+    .map(([path, count]) => ({ path, count: Number(count) || 0 }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  const topClicks = Object.entries(analytics.byClickLabel || {})
+    .map(([label, count]) => ({ label, count: Number(count) || 0 }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  const daily = Object.entries(analytics.daily || {})
+    .map(([date, bucket]) => ({
+      date,
+      views: Number(bucket?.views) || 0,
+      clicks: Number(bucket?.clicks) || 0,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-14);
+
+  return {
+    totals: {
+      views: Number(analytics?.totals?.views) || 0,
+      clicks: Number(analytics?.totals?.clicks) || 0,
+    },
+    topPages,
+    topClicks,
+    daily,
+    updatedAt: analytics?.updatedAt || null,
+  };
 }
 
 function getAllowedOrigins(env) {

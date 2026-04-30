@@ -136,6 +136,22 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
 .dash-info { background:rgba(184,150,90,.08); border:1px solid rgba(184,150,90,.2); padding:18px 22px; margin-bottom:24px; font-size:.78rem; line-height:1.7; color:var(--bark); }
 .dash-info strong { display:block; font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
 
+/* ANALYTICS */
+.analytics-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px; }
+.analytics-card { background:#fff; border:1px solid var(--mist); padding:20px 24px; }
+.analytics-num { font-family:var(--serif); font-size:1.8rem; color:var(--bark); line-height:1; margin-bottom:4px; }
+.analytics-lbl { font-size:.56rem; letter-spacing:.2em; text-transform:uppercase; color:#aaa; }
+.analytics-updated { font-size:.65rem; color:#999; margin-bottom:14px; }
+.analytics-tables { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+.analytics-table { background:#fff; border:1px solid var(--mist); padding:16px 18px; }
+.analytics-table h4 { font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:12px; font-weight:400; }
+.analytics-list { list-style:none; }
+.analytics-list li { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--mist); font-size:.72rem; color:#555; }
+.analytics-list li:last-child { border-bottom:none; }
+.analytics-key { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%; }
+.analytics-val { color:#666; font-family:var(--serif); }
+.analytics-empty { font-size:.72rem; color:#999; padding:8px 0; }
+
 /* SEO preview */
 .seo-preview { background:#fff; border:1px solid var(--mist); padding:24px; margin-top:16px; }
 .seo-preview-label { font-size:.56rem; letter-spacing:.22em; text-transform:uppercase; color:#aaa; margin-bottom:14px; display:block; }
@@ -158,6 +174,8 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
   .form-row { grid-template-columns:1fr; }
   .form-row.three { grid-template-columns:1fr 1fr; }
   .dash-grid { grid-template-columns:1fr 1fr; }
+  .analytics-grid { grid-template-columns:1fr 1fr; }
+  .analytics-tables { grid-template-columns:1fr; }
 }
 </style>
 </head>
@@ -187,6 +205,10 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       <div class="nav-item active" data-page="dashboard">
         <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
         Dashboard
+      </div>
+      <div class="nav-item" data-page="analytics">
+        <svg viewBox="0 0 24 24"><path d="M3 17h2v4H3v-4zm4-6h2v10H7V11zm4 3h2v7h-2v-7zm4-8h2v15h-2V6zm4 5h2v10h-2V11z"/></svg>
+        Analytics
       </div>
 
       <div class="sidebar-section">Content</div>
@@ -286,6 +308,39 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       <div class="dash-info" style="background:rgba(30,58,63,.06);border-color:rgba(30,58,63,.2);">
         <strong>First-time setup</strong>
         To connect this panel to the live site, deploy both files to <strong>Cloudflare Pages</strong> and bind the <strong>VILLA_COCO_CMS</strong> KV namespace. Set the <strong>ADMIN_PASSWORD</strong> environment variable to your chosen password. Contact your technical manager for help.
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="page" id="page-analytics">
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <div class="page-title">Analytics</div>
+          <div class="page-sub">Live website visitors and click behavior.</div>
+        </div>
+        <div class="top-bar-actions">
+          <button class="btn btn-outline" onclick="loadAnalytics(true)">Refresh</button>
+        </div>
+      </div>
+      <div class="analytics-updated" id="analytics-updated">Last updated: —</div>
+      <div class="analytics-grid">
+        <div class="analytics-card"><div class="analytics-num" id="a-views">—</div><div class="analytics-lbl">Total Page Views</div></div>
+        <div class="analytics-card"><div class="analytics-num" id="a-clicks">—</div><div class="analytics-lbl">Total Clicks</div></div>
+        <div class="analytics-card"><div class="analytics-num" id="a-ctr">—</div><div class="analytics-lbl">Clicks per View</div></div>
+      </div>
+      <div class="analytics-tables">
+        <div class="analytics-table">
+          <h4>Top Pages</h4>
+          <ul class="analytics-list" id="analytics-pages"></ul>
+        </div>
+        <div class="analytics-table">
+          <h4>Top Clicks</h4>
+          <ul class="analytics-list" id="analytics-clicks"></ul>
+        </div>
+        <div class="analytics-table">
+          <h4>Last 14 Days</h4>
+          <ul class="analytics-list" id="analytics-daily"></ul>
+        </div>
       </div>
     </div>
 
@@ -876,6 +931,7 @@ document.querySelectorAll('.nav-item').forEach(item=>{
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     item.classList.add('active');
     document.getElementById('page-'+item.dataset.page).classList.add('active');
+    if(item.dataset.page === 'analytics') loadAnalytics();
   });
 });
 
@@ -1444,11 +1500,76 @@ function updateDashboard(){
   d('d-testimonials') && (document.getElementById('d-testimonials').textContent = (data.testimonials||[]).length);
 }
 
+function renderAnalyticsList(id, rows, keyProp){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const esc = (v='')=>String(v)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+  if(!rows || !rows.length){
+    el.innerHTML = '<li class="analytics-empty">No data yet.</li>';
+    return;
+  }
+  el.innerHTML = rows.map(row=>`
+    <li>
+      <span class="analytics-key">${esc(row[keyProp]||'—')}</span>
+      <span class="analytics-val">${esc(row.count ?? `${row.views}/${row.clicks}`)}</span>
+    </li>
+  `).join('');
+}
+
+function renderAnalytics(stats){
+  const views = Number(stats?.totals?.views) || 0;
+  const clicks = Number(stats?.totals?.clicks) || 0;
+  const perView = views ? (clicks / views) : 0;
+  const updatedAt = stats?.updatedAt ? new Date(stats.updatedAt).toLocaleString() : '—';
+
+  document.getElementById('a-views').textContent = views.toLocaleString();
+  document.getElementById('a-clicks').textContent = clicks.toLocaleString();
+  document.getElementById('a-ctr').textContent = `${perView.toFixed(2)}`;
+  document.getElementById('analytics-updated').textContent = `Last updated: ${updatedAt}`;
+
+  renderAnalyticsList('analytics-pages', stats?.topPages || [], 'path');
+  renderAnalyticsList('analytics-clicks', stats?.topClicks || [], 'label');
+  renderAnalyticsList(
+    'analytics-daily',
+    (stats?.daily || []).map(row=>({ ...row, date: row.date, count: `${row.views} / ${row.clicks}` })),
+    'date'
+  );
+}
+
+async function loadAnalytics(showToast = false){
+  if(localDraftMode){
+    renderAnalytics({ totals:{ views:0, clicks:0 }, topPages:[], topClicks:[], daily:[], updatedAt:null });
+    document.getElementById('analytics-updated').textContent = 'Last updated: unavailable in local draft mode';
+    return;
+  }
+  try{
+    const res = await fetchCms('stats', {
+      method:'GET',
+      headers:{ 'X-Admin-Password': sessionPassword }
+    });
+    if(!res || !res.ok){
+      if(showToast) toast('Could not load analytics yet.', 'error');
+      return;
+    }
+    const stats = await res.json();
+    renderAnalytics(stats);
+    if(showToast) toast('Analytics refreshed.', 'success');
+  }catch(e){
+    if(showToast) toast('Could not load analytics yet.', 'error');
+  }
+}
+
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
 function init(){
   loadData();
+  loadAnalytics();
   wireImgPreview('hero-img','hero-img-preview');
   wireImgPreview('story-img','story-img-preview');
   wireImgPreview('food-img','food-img-preview');

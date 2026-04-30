@@ -731,7 +731,6 @@ footer { background:var(--bark); padding:76px 72px 36px; }
     <li><a href="#rooms">Sleep</a></li>
     <li><a href="#wellness">Wellness</a></li>
     <li><a href="#food">Eat & Drink</a></li>
-    <li><a href="#pool">Infinity Pool</a></li>
     <li><a href="#exp">Experiences</a></li>
     <li><a href="#packages">Packages</a></li>
     <li><a href="#testimonials">Testimonials</a></li>
@@ -749,7 +748,6 @@ footer { background:var(--bark); padding:76px 72px 36px; }
     <li><a href="#rooms"    class="dl">Sleep</a></li>
     <li><a href="#wellness" class="dl">Wellness</a></li>
     <li><a href="#food"     class="dl">Eat & Drink</a></li>
-    <li><a href="#pool"     class="dl">Infinity Pool</a></li>
     <li><a href="#exp"      class="dl">Experiences</a></li>
     <li><a href="#packages" class="dl">Packages</a></li>
     <li><a href="#testimonials" class="dl">Testimonials</a></li>
@@ -902,17 +900,6 @@ footer { background:var(--bark); padding:76px 72px 36px; }
     </div>
     <p id="cms-hours-note" style="font-size:.7rem;color:rgba(242,237,228,.68);margin-bottom:24px;font-weight:300;font-style:italic;display:none;"></p>
     <a href="#" class="btn-gold rv d4" style="width:fit-content;" id="cms-menu-link">View the Menu</a>
-  </div>
-</section>
-
-<!-- ─── POOL ───────────────────────────────── -->
-<section class="pool-sec" id="pool">
-  <div class="pool-bg" id="cms-pool-bg"></div>
-  <div class="pool-content rvl">
-    <span class="label" id="cms-pool-label">The Infinity Pool</span>
-    <h2 class="h2" id="cms-pool-title">18 metres of<br><i>Pacific calm</i></h2>
-    <p class="body" style="margin-top:18px;" id="cms-pool-body">Lounge on sunbeds. Sip a Piña Colada under banana trees. Watch the ocean. Time slows here. Open to day visitors.</p>
-    <a href="https://wa.me/50768583330" class="pool-pass" style="margin-top:28px;" id="cms-pool-cta">Day Pass Available → WhatsApp Us</a>
   </div>
 </section>
 
@@ -1176,12 +1163,34 @@ window.addEventListener('resize', setRoomsLayout);
    EXPERIENCES — default, overridden by CMS
 ═══════════════════════════════════════ */
 const DEFAULT_EXP = [
+  { title:'Infinity Pool', desc:'Lounge on sunbeds. Sip a Piña Colada under banana trees. Watch the ocean. Time slows here. Open to day visitors.', img:'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1600&q=80' },
   { title:'Surf La Punta', desc:'The most consistent wave in Panama — ranked among the best in Central America. Five minutes from Villa Coco. Boards and lessons for all levels.', img:'https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=1000&q=80' },
   { title:'Dive Coiba', desc:'A UNESCO World Heritage Site. Whale sharks, hammerheads, dolphins, turtles and coral reefs in crystal Pacific waters. Day trips arranged from the hotel.', img:'https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?w=1000&q=80' },
   { title:'Island Hopping', desc:'Explore Cebaco and the surrounding archipelago. Pristine volcanic beaches, deserted bays, turquoise water — almost no one else around.', img:'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=1000&q=80' },
   { title:'Yoga & Surf Retreats', desc:'Six-night all-inclusive retreats with Waluaa Surf & Yoga. Surf coaching, yoga, meditation — relaxed, welcoming, with a pampered touch.', img:'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1000&q=80' },
   { title:'Horseback Riding', desc:"Ride through jungle and along volcanic black-sand beaches — one of the most memorable ways to experience Panama's Pacific coast.", img:'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=1000&q=80' },
 ];
+
+function plainText(value){
+  return textOrEmpty(value).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function buildExperienceList(experiences, pool){
+  const poolExp = pool ? [{
+    title: plainText(pool.label) || 'Infinity Pool',
+    desc: plainText(pool.body) || 'Open to day visitors.',
+    img: textOrEmpty(pool.img)
+  }] : [];
+  const baseExps = Array.isArray(experiences) ? experiences : [];
+  const merged = [...poolExp, ...baseExps]
+    .filter(e=>textOrEmpty(e?.title) || textOrEmpty(e?.desc) || textOrEmpty(e?.img))
+    .map(e=>({
+      title: textOrEmpty(e.title) || 'Experience',
+      desc: textOrEmpty(e.desc) || '',
+      img: textOrEmpty(e.img)
+    }));
+  return merged.length ? merged : DEFAULT_EXP;
+}
 
 function renderExperiences(exps){
   const tabsEl   = document.getElementById('exp-tabs');
@@ -1404,8 +1413,8 @@ function applyCMS(cms){
   // ── ROOMS
   if(cms.rooms?.length) renderRooms(cms.rooms);
 
-  // ── EXPERIENCES
-  if(cms.experiences?.length) renderExperiences(cms.experiences);
+  // ── EXPERIENCES (Infinity Pool is injected as first experience)
+  renderExperiences(buildExperienceList(cms.experiences, cms.pool));
   if(cms.expSection){
     const ex = cms.expSection;
     const lbl = document.getElementById('cms-exp-label'); if(lbl && ex.label) lbl.textContent = ex.label;
@@ -1459,17 +1468,6 @@ function applyCMS(cms){
       </div>`).join('');
     const noteEl = document.getElementById('cms-hours-note');
     if(noteEl && cms.hoursNote){ noteEl.textContent = cms.hoursNote; noteEl.style.display='block'; }
-  }
-
-  // ── POOL
-  if(cms.pool){
-    const p = cms.pool;
-    const bg  = document.getElementById('cms-pool-bg');
-    if(bg && p.img) bg.style.backgroundImage = `linear-gradient(to right, rgba(28,28,26,.86) 0%, rgba(28,28,26,.3) 55%, transparent 100%), url('${safeUrl(p.img)}')`;
-    const lbl = document.getElementById('cms-pool-label'); if(lbl && p.label) lbl.textContent = p.label;
-    const ttl = document.getElementById('cms-pool-title'); if(ttl && p.title) ttl.innerHTML = sanitizeInlineHTML(p.title);
-    const bdy = document.getElementById('cms-pool-body'); if(bdy && p.body) bdy.textContent = p.body;
-    const cta = document.getElementById('cms-pool-cta'); if(cta && p.cta) cta.textContent = p.cta;
   }
 
   // ── PACKAGES
@@ -1593,6 +1591,47 @@ try {
 window.addEventListener('storage', e=>{
   if(e.key !== CACHE_KEY || !e.newValue) return;
   try { applyIfChanged(JSON.parse(e.newValue)); } catch(err){}
+});
+
+/* ── Lightweight analytics tracking ── */
+const TRACK_API_BASES = ['/api/cms', '/functions/api/cms', '/.netlify/functions/cms'];
+let trackApiBase = '';
+
+async function sendTrackEvent(payload){
+  const bases = trackApiBase ? [trackApiBase, ...TRACK_API_BASES.filter(b=>b!==trackApiBase)] : TRACK_API_BASES;
+  for(const base of bases){
+    try{
+      const res = await fetch(`${base}?action=track`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true
+      });
+      if(res.status === 404 || res.status === 405) continue;
+      if(res.ok) trackApiBase = base;
+      return;
+    }catch(e){}
+  }
+}
+
+function trimmedText(value, max=80){
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+sendTrackEvent({
+  type: 'pageview',
+  path: `${location.pathname}${location.hash || ''}`
+});
+
+document.addEventListener('click', e=>{
+  const link = e.target.closest('a');
+  if(!link) return;
+  const label = trimmedText(link.getAttribute('aria-label') || link.textContent || link.getAttribute('href') || 'link');
+  sendTrackEvent({
+    type: 'click',
+    path: `${location.pathname}${location.hash || ''}`,
+    label
+  });
 });
 
 // 2. Fetch from KV via Pages Function
