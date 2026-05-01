@@ -1309,6 +1309,37 @@ function getEmbedUrl(url){
   if(vimeoId) return `https://player.vimeo.com/video/${vimeoId}?autoplay=1`;
   return url;
 }
+const DEFAULT_VIDEOS = {
+  label: 'Watch & Explore',
+  title: 'Life at<br><i>Villa Coco</i>',
+  sub: 'A glimpse into the magic.',
+  items: [
+    { url: 'https://www.youtube.com/watch?v=ysz5S6PUM-U', title: 'Villa Coco Video Example' }
+  ]
+};
+function renderVideosSection(videos){
+  const sec = document.getElementById('videos-sec');
+  if(!sec) return;
+  if(!videos?.items?.length){
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = '';
+  const lbl = document.getElementById('cms-videos-label'); if(lbl && videos.label) lbl.textContent = videos.label;
+  const ttl = document.getElementById('cms-videos-title'); if(ttl && videos.title) ttl.innerHTML = sanitizeInlineHTML(videos.title);
+  const sub = document.getElementById('cms-videos-sub');   if(sub && videos.sub)   sub.textContent = videos.sub;
+  const grid = document.getElementById('cms-video-grid');
+  if(grid) grid.innerHTML = videos.items.map(item=>{
+    const safe  = safeUrl(item.url||'');
+    const thumb = getVideoThumbnail(item.url||'');
+    return `<div class="video-card" data-url="${safe}">
+      ${thumb ? `<img src="${thumb}" alt="${escapeHTML(item.title||'')}">` : `<div class="video-no-thumb"></div>`}
+      <div class="video-play-overlay"><div class="video-play-circle"></div></div>
+      ${item.title ? `<div class="video-card-lbl">${escapeHTML(item.title)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+renderVideosSection(DEFAULT_VIDEOS);
 function openVideoModal(url){
   const modal = document.getElementById('video-modal');
   const inner = document.getElementById('video-modal-inner');
@@ -1519,26 +1550,7 @@ function applyCMS(cms){
   }
 
   // ── VIDEOS
-  if(cms.videos?.items?.length){
-    const sec = document.getElementById('videos-sec');
-    if(sec){
-      sec.style.display = '';
-      const v = cms.videos;
-      const lbl = document.getElementById('cms-videos-label'); if(lbl && v.label) lbl.textContent = v.label;
-      const ttl = document.getElementById('cms-videos-title'); if(ttl && v.title) ttl.innerHTML = sanitizeInlineHTML(v.title);
-      const sub = document.getElementById('cms-videos-sub');   if(sub && v.sub)   sub.textContent = v.sub;
-      const grid = document.getElementById('cms-video-grid');
-      if(grid) grid.innerHTML = v.items.map(item=>{
-        const safe  = safeUrl(item.url||'');
-        const thumb = getVideoThumbnail(item.url||'');
-        return `<div class="video-card" data-url="${safe}">
-          ${thumb ? `<img src="${thumb}" alt="${escapeHTML(item.title||'')}">` : `<div class="video-no-thumb"></div>`}
-          <div class="video-play-overlay"><div class="video-play-circle"></div></div>
-          ${item.title ? `<div class="video-card-lbl">${escapeHTML(item.title)}</div>` : ''}
-        </div>`;
-      }).join('');
-    }
-  }
+  renderVideosSection(cms.videos?.items?.length ? cms.videos : DEFAULT_VIDEOS);
 
   // ── FOOTER
   if(cms.footer){
