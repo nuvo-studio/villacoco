@@ -1309,14 +1309,6 @@ function getEmbedUrl(url){
   if(vimeoId) return `https://player.vimeo.com/video/${vimeoId}?autoplay=1`;
   return url;
 }
-const DEFAULT_VIDEOS = {
-  label: 'Watch & Explore',
-  title: 'Life at<br><i>Villa Coco</i>',
-  sub: 'A glimpse into the magic.',
-  items: [
-    { url: 'https://www.youtube.com/watch?v=ysz5S6PUM-U', title: 'Villa Coco Video Example' }
-  ]
-};
 function renderVideosSection(videos){
   const sec = document.getElementById('videos-sec');
   if(!sec) return;
@@ -1339,7 +1331,6 @@ function renderVideosSection(videos){
     </div>`;
   }).join('');
 }
-renderVideosSection(DEFAULT_VIDEOS);
 function openVideoModal(url){
   const modal = document.getElementById('video-modal');
   const inner = document.getElementById('video-modal-inner');
@@ -1550,7 +1541,7 @@ function applyCMS(cms){
   }
 
   // ── VIDEOS
-  renderVideosSection(cms.videos?.items?.length ? cms.videos : DEFAULT_VIDEOS);
+  renderVideosSection(cms.videos);
 
   // ── FOOTER
   if(cms.footer){
