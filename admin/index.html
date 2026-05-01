@@ -168,6 +168,13 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
 .color-desc { font-size:.68rem; color:#999; font-weight:300; line-height:1.5; }
 .color-hex  { font-family:monospace; font-size:.75rem; color:#888; min-width:72px; text-align:right; }
 
+/* DOCS */
+.docs-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.docs-card { background:#fff; border:1px solid var(--mist); padding:20px 22px; }
+.docs-card h4 { font-size:.64rem; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); margin-bottom:10px; font-weight:400; }
+.docs-card p { font-size:.76rem; color:#666; line-height:1.7; margin-bottom:14px; }
+.docs-actions { display:flex; gap:10px; flex-wrap:wrap; }
+
 @media (max-width:900px){
   .sidebar { width:200px; }
   .main { margin-left:200px; padding:28px 24px; }
@@ -176,6 +183,7 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
   .dash-grid { grid-template-columns:1fr 1fr; }
   .analytics-grid { grid-template-columns:1fr 1fr; }
   .analytics-tables { grid-template-columns:1fr; }
+  .docs-grid { grid-template-columns:1fr; }
 }
 </style>
 </head>
@@ -273,6 +281,10 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       <div class="nav-item" data-page="colors">
         <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.02-.23-.27-.38-.63-.38-1.02 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
         Colors
+      </div>
+      <div class="nav-item" data-page="intelligence">
+        <svg viewBox="0 0 24 24"><path d="M18 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h10l4 4V4c0-1.1-.9-2-2-2zM9 7h8v2H9V7zm0 4h8v2H9v-2zm0 4h5v2H9v-2zM4 6H2v14c0 1.1.9 2 2 2h12v-2H4V6z"/></svg>
+        Intelligence Docs
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -689,6 +701,27 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
           <input type="color" class="color-swatch" id="color-wellness" value="#3d5a47" oninput="syncHex('wellness')">
           <div class="color-info"><div class="color-name">Wellness Green</div><div class="color-desc">Used in the yoga and wellness section backgrounds.</div></div>
           <span class="color-hex" id="hex-wellness">#3d5a47</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTELLIGENCE DOCS -->
+    <div class="page" id="page-intelligence">
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <div class="page-title">Intelligence Docs</div>
+          <div class="page-sub">Single source of truth for owners, operators, and developers.</div>
+        </div>
+      </div>
+      <div class="docs-grid">
+        <div class="docs-card">
+          <h4>Master Website Intelligence</h4>
+          <p>
+            This is the canonical playbook for launch, content operations, deployment, SEO, analytics, media standards, and troubleshooting.
+          </p>
+          <div class="docs-actions">
+            <button class="btn btn-outline" onclick="window.open('/MASTER_WEBSITE_INTELLIGENCE.md','_blank')">Open Master Doc</button>
+          </div>
         </div>
       </div>
     </div>
