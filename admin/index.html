@@ -137,12 +137,12 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
 .dash-info strong { display:block; font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
 
 /* ANALYTICS */
-.analytics-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px; }
+.analytics-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:18px; }
 .analytics-card { background:#fff; border:1px solid var(--mist); padding:20px 24px; }
 .analytics-num { font-family:var(--serif); font-size:1.8rem; color:var(--bark); line-height:1; margin-bottom:4px; }
 .analytics-lbl { font-size:.56rem; letter-spacing:.2em; text-transform:uppercase; color:#aaa; }
 .analytics-updated { font-size:.65rem; color:#999; margin-bottom:14px; }
-.analytics-tables { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+.analytics-tables { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; }
 .analytics-table { background:#fff; border:1px solid var(--mist); padding:16px 18px; }
 .analytics-table h4 { font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:12px; font-weight:400; }
 .analytics-list { list-style:none; }
@@ -325,8 +325,10 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       <div class="analytics-updated" id="analytics-updated">Last updated: —</div>
       <div class="analytics-grid">
         <div class="analytics-card"><div class="analytics-num" id="a-views">—</div><div class="analytics-lbl">Total Page Views</div></div>
+        <div class="analytics-card"><div class="analytics-num" id="a-unique">—</div><div class="analytics-lbl">Unique Visitors</div></div>
         <div class="analytics-card"><div class="analytics-num" id="a-clicks">—</div><div class="analytics-lbl">Total Clicks</div></div>
         <div class="analytics-card"><div class="analytics-num" id="a-ctr">—</div><div class="analytics-lbl">Clicks per View</div></div>
+        <div class="analytics-card"><div class="analytics-num" id="a-mobile-share">—</div><div class="analytics-lbl">Mobile Share</div></div>
       </div>
       <div class="analytics-tables">
         <div class="analytics-table">
@@ -338,7 +340,11 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
           <ul class="analytics-list" id="analytics-clicks"></ul>
         </div>
         <div class="analytics-table">
-          <h4>Last 14 Days</h4>
+          <h4>Devices</h4>
+          <ul class="analytics-list" id="analytics-devices"></ul>
+        </div>
+        <div class="analytics-table">
+          <h4>Last 14 Days (V / U / C)</h4>
           <ul class="analytics-list" id="analytics-daily"></ul>
         </div>
       </div>
@@ -1523,27 +1529,44 @@ function renderAnalyticsList(id, rows, keyProp){
 
 function renderAnalytics(stats){
   const views = Number(stats?.totals?.views) || 0;
+  const uniqueVisitors = Number(stats?.totals?.uniqueVisitors) || 0;
   const clicks = Number(stats?.totals?.clicks) || 0;
   const perView = views ? (clicks / views) : 0;
+  const mobileViews = Number(stats?.byDevice?.mobile) || 0;
+  const mobileShare = views ? (mobileViews / views) * 100 : 0;
   const updatedAt = stats?.updatedAt ? new Date(stats.updatedAt).toLocaleString() : '—';
 
   document.getElementById('a-views').textContent = views.toLocaleString();
+  document.getElementById('a-unique').textContent = uniqueVisitors.toLocaleString();
   document.getElementById('a-clicks').textContent = clicks.toLocaleString();
   document.getElementById('a-ctr').textContent = `${perView.toFixed(2)}`;
+  document.getElementById('a-mobile-share').textContent = `${mobileShare.toFixed(0)}%`;
   document.getElementById('analytics-updated').textContent = `Last updated: ${updatedAt}`;
 
   renderAnalyticsList('analytics-pages', stats?.topPages || [], 'path');
   renderAnalyticsList('analytics-clicks', stats?.topClicks || [], 'label');
   renderAnalyticsList(
+    'analytics-devices',
+    Object.entries(stats?.byDevice || {}).map(([device, count])=>({ device, count })),
+    'device'
+  );
+  renderAnalyticsList(
     'analytics-daily',
-    (stats?.daily || []).map(row=>({ ...row, date: row.date, count: `${row.views} / ${row.clicks}` })),
+    (stats?.daily || []).map(row=>({ ...row, date: row.date, count: `${row.views} / ${row.uniqueVisitors} / ${row.clicks}` })),
     'date'
   );
 }
 
 async function loadAnalytics(showToast = false){
   if(localDraftMode){
-    renderAnalytics({ totals:{ views:0, clicks:0 }, topPages:[], topClicks:[], daily:[], updatedAt:null });
+    renderAnalytics({
+      totals:{ views:0, uniqueVisitors:0, clicks:0 },
+      byDevice:{ desktop:0, mobile:0, tablet:0, other:0 },
+      topPages:[],
+      topClicks:[],
+      daily:[],
+      updatedAt:null
+    });
     document.getElementById('analytics-updated').textContent = 'Last updated: unavailable in local draft mode';
     return;
   }

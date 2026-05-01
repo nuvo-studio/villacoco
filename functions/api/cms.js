@@ -16,6 +16,7 @@ const MAX_TEXT_CHARS = 8_000;
 const MAX_ITEMS = 50;
 const MAX_DEPTH = 8;
 const MAX_ANALYTICS_FIELD = 120;
+const MAX_VISITOR_ID = 64;
 const ANALYTICS_KEY = 'cms_analytics';
 
 export async function onRequest(context) {
@@ -92,22 +93,66 @@ export async function onRequest(context) {
       const dayKey = new Date().toISOString().slice(0, 10);
       const path = normalizeAnalyticsField(payload?.path, '/');
       const label = normalizeAnalyticsField(payload?.label, 'Unknown');
+      const visitorId = normalizeVisitorId(payload?.visitorId);
+      const device = normalizeDevice(payload?.device);
 
       analytics.totals.views += eventType === 'pageview' ? 1 : 0;
       analytics.totals.clicks += eventType === 'click' ? 1 : 0;
 
       if (eventType === 'pageview') {
         analytics.byPath[path] = (analytics.byPath[path] || 0) + 1;
+        analytics.byDevice[device] = (analytics.byDevice[device] || 0) + 1;
       }
       if (eventType === 'click') {
         analytics.byClickLabel[label] = (analytics.byClickLabel[label] || 0) + 1;
       }
 
       if (!analytics.daily[dayKey]) {
-        analytics.daily[dayKey] = { views: 0, clicks: 0 };
+        analytics.daily[dayKey] = {
+          views: 0,
+          clicks: 0,
+          uniqueVisitors: 0,
+          visitorIds: {},
+          devices: { desktop: 0, mobile: 0, tablet: 0, other: 0 },
+        };
+      } else {
+        analytics.daily[dayKey].uniqueVisitors = Number(analytics.daily[dayKey].uniqueVisitors) || 0;
+        analytics.daily[dayKey].visitorIds = analytics.daily[dayKey].visitorIds && typeof analytics.daily[dayKey].visitorIds === 'object'
+          ? analytics.daily[dayKey].visitorIds
+          : {};
+        analytics.daily[dayKey].devices = analytics.daily[dayKey].devices && typeof analytics.daily[dayKey].devices === 'object'
+          ? {
+              desktop: Number(analytics.daily[dayKey].devices.desktop) || 0,
+              mobile: Number(analytics.daily[dayKey].devices.mobile) || 0,
+              tablet: Number(analytics.daily[dayKey].devices.tablet) || 0,
+              other: Number(analytics.daily[dayKey].devices.other) || 0,
+            }
+          : { desktop: 0, mobile: 0, tablet: 0, other: 0 };
       }
       analytics.daily[dayKey].views += eventType === 'pageview' ? 1 : 0;
       analytics.daily[dayKey].clicks += eventType === 'click' ? 1 : 0;
+      if (eventType === 'pageview') {
+        analytics.daily[dayKey].devices[device] = (analytics.daily[dayKey].devices[device] || 0) + 1;
+      }
+
+      if (visitorId) {
+        if (!analytics.visitors[visitorId]) {
+          analytics.totals.uniqueVisitors += 1;
+          analytics.visitors[visitorId] = {
+            firstSeen: new Date().toISOString(),
+            lastSeen: new Date().toISOString(),
+            device,
+          };
+        } else {
+          analytics.visitors[visitorId].lastSeen = new Date().toISOString();
+          analytics.visitors[visitorId].device = device;
+        }
+
+        if (!analytics.daily[dayKey].visitorIds[visitorId]) {
+          analytics.daily[dayKey].visitorIds[visitorId] = 1;
+          analytics.daily[dayKey].uniqueVisitors += 1;
+        }
+      }
       analytics.updatedAt = new Date().toISOString();
 
       await env.VILLA_COCO_CMS.put(ANALYTICS_KEY, JSON.stringify(analytics));
@@ -168,6 +213,8 @@ async function readAnalytics(env) {
   if (!raw) {
     return {
       totals: { views: 0, clicks: 0 },
+      byDevice: { desktop: 0, mobile: 0, tablet: 0, other: 0 },
+      visitors: {},
       byPath: {},
       byClickLabel: {},
       daily: {},
@@ -180,7 +227,17 @@ async function readAnalytics(env) {
       totals: {
         views: Number(parsed?.totals?.views) || 0,
         clicks: Number(parsed?.totals?.clicks) || 0,
+        uniqueVisitors: Number(parsed?.totals?.uniqueVisitors) || Object.keys(parsed?.visitors || {}).length || 0,
       },
+      byDevice: parsed?.byDevice && typeof parsed.byDevice === 'object'
+        ? {
+            desktop: Number(parsed.byDevice.desktop) || 0,
+            mobile: Number(parsed.byDevice.mobile) || 0,
+            tablet: Number(parsed.byDevice.tablet) || 0,
+            other: Number(parsed.byDevice.other) || 0,
+          }
+        : { desktop: 0, mobile: 0, tablet: 0, other: 0 },
+      visitors: parsed?.visitors && typeof parsed.visitors === 'object' ? parsed.visitors : {},
       byPath: parsed?.byPath && typeof parsed.byPath === 'object' ? parsed.byPath : {},
       byClickLabel: parsed?.byClickLabel && typeof parsed.byClickLabel === 'object' ? parsed.byClickLabel : {},
       daily: parsed?.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
@@ -189,6 +246,8 @@ async function readAnalytics(env) {
   } catch (e) {
     return {
       totals: { views: 0, clicks: 0 },
+      byDevice: { desktop: 0, mobile: 0, tablet: 0, other: 0 },
+      visitors: {},
       byPath: {},
       byClickLabel: {},
       daily: {},
@@ -202,6 +261,19 @@ function normalizeAnalyticsField(value, fallback) {
   const trimmed = value.trim().replace(/\s+/g, ' ');
   if (!trimmed) return fallback;
   return trimmed.slice(0, MAX_ANALYTICS_FIELD);
+}
+
+function normalizeVisitorId(value) {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return trimmed.slice(0, MAX_VISITOR_ID);
+}
+
+function normalizeDevice(value) {
+  const v = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (v === 'mobile' || v === 'tablet' || v === 'desktop') return v;
+  return 'other';
 }
 
 function formatAnalytics(analytics) {
@@ -220,15 +292,25 @@ function formatAnalytics(analytics) {
       date,
       views: Number(bucket?.views) || 0,
       clicks: Number(bucket?.clicks) || 0,
+      uniqueVisitors: Number(bucket?.uniqueVisitors) || 0,
     }))
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-14);
+
+  const byDevice = {
+    desktop: Number(analytics?.byDevice?.desktop) || 0,
+    mobile: Number(analytics?.byDevice?.mobile) || 0,
+    tablet: Number(analytics?.byDevice?.tablet) || 0,
+    other: Number(analytics?.byDevice?.other) || 0,
+  };
 
   return {
     totals: {
       views: Number(analytics?.totals?.views) || 0,
       clicks: Number(analytics?.totals?.clicks) || 0,
+      uniqueVisitors: Number(analytics?.totals?.uniqueVisitors) || 0,
     },
+    byDevice,
     topPages,
     topClicks,
     daily,
