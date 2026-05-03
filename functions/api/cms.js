@@ -4,6 +4,7 @@
  *
  * GET  /api/cms        → public read of live content
  * GET  /api/cms?action=stats  → read analytics summary (auth required)
+ * GET  /api/cms?action=seo-health → read SEO integration/health checks (auth required)
  * GET  /api/cms?action=auth   → verify admin password (fallback for restricted hosts)
  * POST /api/cms?action=auth   → verify admin password
  * POST /api/cms?action=track  → track pageview/click event
@@ -59,6 +60,18 @@ export async function onRequest(context) {
       return json(formatAnalytics(analytics), 200, headers);
     } catch (e) {
       return json({ error: 'Failed to read analytics' }, 500, headers);
+    }
+  }
+
+  if (method === 'GET' && action === 'seo-health') {
+    if (!isAuthorized(request, env)) {
+      return json({ error: 'Unauthorized' }, 401, headers);
+    }
+    try {
+      const health = await buildSeoHealth(env, request.url);
+      return json(health, 200, headers);
+    } catch (e) {
+      return json({ error: 'Failed to read seo health' }, 500, headers);
     }
   }
 
@@ -378,6 +391,43 @@ async function generateMarketingCopy(env, input) {
     : '';
   if (!text) throw new Error('AI provider returned empty content');
   return text.slice(0, 4000);
+}
+
+async function buildSeoHealth(env, requestUrl) {
+  const url = new URL(requestUrl);
+  const origin = `${url.protocol}//${url.host}`;
+  const sitemapUrl = `${origin}/sitemap.xml`;
+
+  let sitemap = { ok: false, status: null, checkedUrl: sitemapUrl };
+  try {
+    const res = await fetch(sitemapUrl, { method: 'GET' });
+    const contentType = (res.headers.get('content-type') || '').toLowerCase();
+    const body = await res.text();
+    const looksXml = body.includes('<urlset') || body.includes('<sitemapindex');
+    sitemap = {
+      ok: res.ok && contentType.includes('xml') && looksXml,
+      status: res.status,
+      checkedUrl: sitemapUrl,
+    };
+  } catch (e) {
+    sitemap = { ok: false, status: null, checkedUrl: sitemapUrl };
+  }
+
+  // Lightweight "connected" signal for Phase 2:
+  // if GSC OAuth/config credentials exist in env, treat as configured.
+  const gscConfigured = Boolean(
+    (env.GSC_CLIENT_ID && env.GSC_CLIENT_SECRET) ||
+    env.GSC_REFRESH_TOKEN
+  );
+
+  return {
+    sitemap,
+    gsc: {
+      configured: gscConfigured,
+      mode: 'env-config',
+    },
+    checkedAt: new Date().toISOString(),
+  };
 }
 
 function formatAnalytics(analytics) {

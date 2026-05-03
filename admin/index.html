@@ -362,11 +362,12 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
             <li><input type="checkbox" id="m-seo-title" disabled> Meta title configured (auto)</li>
             <li><input type="checkbox" id="m-seo-description" disabled> Meta description configured (auto)</li>
             <li><input type="checkbox" id="m-seo-og" disabled> OG image configured (auto)</li>
-            <li><input type="checkbox" id="m-seo-sitemap"> Sitemap.xml validated (manual)</li>
+            <li><input type="checkbox" id="m-seo-sitemap" disabled> Sitemap.xml validated (auto)</li>
             <li><input type="checkbox" id="m-seo-gbp"> Google Business Profile updated (manual)</li>
-            <li><input type="checkbox" id="m-seo-gsc"> Search Console connected (manual)</li>
+            <li><input type="checkbox" id="m-seo-gsc" disabled> Search Console connected (auto)</li>
           </ul>
-          <div class="hint-text">Manual checks are operational confirmations saved with CMS settings. Automated validation can be added in Phase 2.</div>
+          <div class="hint-text" id="m-seo-auto-status">Auto checks run from backend status endpoints.</div>
+          <div class="hint-text">GBP remains a manual operational confirmation saved with CMS settings.</div>
         </div>
       </div>
       <div class="analytics-updated" id="analytics-updated" style="margin-top:14px;">Last updated: —</div>
@@ -1101,7 +1102,10 @@ document.querySelectorAll('.nav-item').forEach(item=>{
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     item.classList.add('active');
     document.getElementById('page-'+item.dataset.page).classList.add('active');
-    if(item.dataset.page === 'marketing-overview') loadAnalytics();
+    if(item.dataset.page === 'marketing-overview'){
+      loadAnalytics();
+      loadSeoHealthStatus();
+    }
   });
 });
 
@@ -1530,9 +1534,9 @@ function renderMarketingOverview(){
   set('m-seo-title', hasTitle);
   set('m-seo-description', hasDescription);
   set('m-seo-og', hasOg);
-  set('m-seo-sitemap', checklist.sitemapReady !== false);
   set('m-seo-gbp', !!checklist.gbpConnected);
-  set('m-seo-gsc', !!checklist.gscConnected);
+  set('m-seo-sitemap', false);
+  set('m-seo-gsc', false);
 }
 
 function renderInquiryToolkit(){
@@ -1697,9 +1701,8 @@ function collectAll(){
   };
   data.marketing = {
     seoChecklist: {
-      sitemapReady: gc('m-seo-sitemap'),
       gbpConnected: gc('m-seo-gbp'),
-      gscConnected: gc('m-seo-gsc')
+      gscConnected: false
     },
     inquiryTemplates: ((data.marketing||{}).inquiryTemplates||[]).map((_,i)=>({
       channel: g(`inq-channel-${i}`) || 'whatsapp',
@@ -1844,6 +1847,43 @@ async function loadAnalytics(showToast = false){
   }
 }
 
+async function loadSeoHealthStatus(showToast = false){
+  const set = (id, checked)=>{
+    const el = document.getElementById(id);
+    if(el) el.checked = !!checked;
+  };
+  const statusEl = document.getElementById('m-seo-auto-status');
+  if(localDraftMode){
+    set('m-seo-sitemap', false);
+    set('m-seo-gsc', false);
+    if(statusEl) statusEl.textContent = 'Auto checks unavailable in local draft mode.';
+    return;
+  }
+  try{
+    const res = await fetchCms('seo-health', {
+      method:'GET',
+      headers:{ 'X-Admin-Password': sessionPassword }
+    });
+    if(!res || !res.ok){
+      if(statusEl) statusEl.textContent = 'Auto checks unavailable (API error).';
+      if(showToast) toast('Could not refresh SEO auto checks.', 'error');
+      return;
+    }
+    const health = await res.json();
+    set('m-seo-sitemap', !!health?.sitemap?.ok);
+    set('m-seo-gsc', !!health?.gsc?.configured);
+    if(statusEl){
+      const sitemapText = health?.sitemap?.ok ? 'Sitemap OK' : `Sitemap issue${health?.sitemap?.status ? ` (${health.sitemap.status})` : ''}`;
+      const gscText = health?.gsc?.configured ? 'GSC configured' : 'GSC not configured';
+      statusEl.textContent = `${sitemapText} · ${gscText}`;
+    }
+    if(showToast) toast('SEO auto checks refreshed.', 'success');
+  }catch(e){
+    if(statusEl) statusEl.textContent = 'Auto checks unavailable (network error).';
+    if(showToast) toast('Could not refresh SEO auto checks.', 'error');
+  }
+}
+
 async function generateContentStudio(){
   if(localDraftMode){
     toast('AI content generation requires live CMS API.', 'info');
@@ -1935,6 +1975,7 @@ function saveGeneratedAsTemplate(){
 function init(){
   loadData();
   loadAnalytics();
+  loadSeoHealthStatus();
   wireImgPreview('hero-img','hero-img-preview');
   wireImgPreview('story-img','story-img-preview');
   wireImgPreview('food-img','food-img-preview');
