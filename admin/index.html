@@ -356,27 +356,17 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
         </div>
       </div>
       <div class="marketing-grid">
-        <div class="marketing-card">
-          <h4>Traffic Snapshot</h4>
-          <div class="marketing-kpis">
-            <div class="marketing-kpi"><div class="marketing-kpi-num" id="mo-views">0</div><div class="marketing-kpi-lbl">Views</div></div>
-            <div class="marketing-kpi"><div class="marketing-kpi-num" id="mo-unique">0</div><div class="marketing-kpi-lbl">Unique Visitors</div></div>
-            <div class="marketing-kpi"><div class="marketing-kpi-num" id="mo-clicks">0</div><div class="marketing-kpi-lbl">Clicks</div></div>
-            <div class="marketing-kpi"><div class="marketing-kpi-num" id="mo-mobile">0%</div><div class="marketing-kpi-lbl">Mobile Share</div></div>
-          </div>
-          <div class="hint-text" id="mo-updated">Last updated: —</div>
-        </div>
-        <div class="marketing-card">
-          <h4>SEO Health Checklist</h4>
+        <div class="marketing-card" style="grid-column:1/-1;">
+          <h4>SEO Health Checklist (Ops)</h4>
           <ul class="marketing-checklist">
-            <li><input type="checkbox" id="m-seo-title" disabled> Meta title configured</li>
-            <li><input type="checkbox" id="m-seo-description" disabled> Meta description configured</li>
-            <li><input type="checkbox" id="m-seo-og" disabled> OG image configured</li>
-            <li><input type="checkbox" id="m-seo-sitemap"> Sitemap.xml validated</li>
-            <li><input type="checkbox" id="m-seo-gbp"> Google Business Profile updated</li>
-            <li><input type="checkbox" id="m-seo-gsc"> Search Console connected</li>
+            <li><input type="checkbox" id="m-seo-title" disabled> Meta title configured (auto)</li>
+            <li><input type="checkbox" id="m-seo-description" disabled> Meta description configured (auto)</li>
+            <li><input type="checkbox" id="m-seo-og" disabled> OG image configured (auto)</li>
+            <li><input type="checkbox" id="m-seo-sitemap"> Sitemap.xml validated (manual)</li>
+            <li><input type="checkbox" id="m-seo-gbp"> Google Business Profile updated (manual)</li>
+            <li><input type="checkbox" id="m-seo-gsc"> Search Console connected (manual)</li>
           </ul>
-          <div class="hint-text">Manual checks are saved with the rest of CMS settings.</div>
+          <div class="hint-text">Manual checks are operational confirmations saved with CMS settings. Automated validation can be added in Phase 2.</div>
         </div>
       </div>
       <div class="analytics-updated" id="analytics-updated" style="margin-top:14px;">Last updated: —</div>
@@ -1766,21 +1756,8 @@ function updateDashboard(){
 }
 
 function updateMarketingOverviewFromStats(stats){
-  const views = Number(stats?.totals?.views) || 0;
-  const uniqueVisitors = Number(stats?.totals?.uniqueVisitors) || 0;
-  const clicks = Number(stats?.totals?.clicks) || 0;
-  const mobileViews = Number(stats?.byDevice?.mobile) || 0;
-  const mobileShare = views ? (mobileViews / views) * 100 : 0;
-  const updatedAt = stats?.updatedAt ? new Date(stats.updatedAt).toLocaleString() : '—';
-  const setText = (id, value)=>{
-    const el = document.getElementById(id);
-    if(el) el.textContent = value;
-  };
-  setText('mo-views', views.toLocaleString());
-  setText('mo-unique', uniqueVisitors.toLocaleString());
-  setText('mo-clicks', clicks.toLocaleString());
-  setText('mo-mobile', `${mobileShare.toFixed(0)}%`);
-  setText('mo-updated', `Last updated: ${updatedAt}`);
+  // Marketing overview currently reuses the main analytics widgets below.
+  // Kept as a hook in case we add dedicated marketing KPI cards later.
 }
 
 function renderAnalyticsList(id, rows, keyProp){
