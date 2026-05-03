@@ -129,7 +129,7 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
 .toast-info    { background:var(--ocean); }
 
 /* DASHBOARD STATS */
-.dash-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:36px; }
+.dash-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:36px; }
 .dash-card { background:#fff; border:1px solid var(--mist); padding:24px 28px; }
 .dash-num  { font-family:var(--serif); font-size:2rem; color:var(--bark); line-height:1; margin-bottom:6px; }
 .dash-lbl  { font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; color:#aaa; font-weight:300; }
@@ -335,8 +335,13 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       </div>
       <div class="dash-grid" id="dash-grid">
         <div class="dash-card"><div class="dash-num" id="d-rooms">—</div><div class="dash-lbl">Rooms</div></div>
+        <div class="dash-card"><div class="dash-num" id="d-experiences">—</div><div class="dash-lbl">Experiences</div></div>
         <div class="dash-card"><div class="dash-num" id="d-packages">—</div><div class="dash-lbl">Packages</div></div>
         <div class="dash-card"><div class="dash-num" id="d-testimonials">—</div><div class="dash-lbl">Testimonials</div></div>
+        <div class="dash-card"><div class="dash-num" id="d-gallery">—</div><div class="dash-lbl">Gallery Items</div></div>
+        <div class="dash-card"><div class="dash-num" id="d-videos">—</div><div class="dash-lbl">Video Entries</div></div>
+        <div class="dash-card"><div class="dash-num" id="d-wellness-pillars">—</div><div class="dash-lbl">Wellness Pillars</div></div>
+        <div class="dash-card"><div class="dash-num" id="d-hours">—</div><div class="dash-lbl">Hours Blocks</div></div>
       </div>
       <div class="dash-info">
         <strong>How to use this panel</strong>
@@ -1754,8 +1759,13 @@ function removeInquiryTemplate(i){
 function updateDashboard(){
   const d = n=>{ const el=document.getElementById(n); if(el) return el; };
   d('d-rooms')        && (document.getElementById('d-rooms').textContent        = (data.rooms||[]).length);
+  d('d-experiences')  && (document.getElementById('d-experiences').textContent  = (data.experiences||[]).length);
   d('d-packages')     && (document.getElementById('d-packages').textContent     = (data.packages||[]).length);
   d('d-testimonials') && (document.getElementById('d-testimonials').textContent = (data.testimonials||[]).length);
+  d('d-gallery')      && (document.getElementById('d-gallery').textContent      = (data.gallery||[]).length);
+  d('d-videos')       && (document.getElementById('d-videos').textContent       = (data.videos?.items||[]).length);
+  d('d-wellness-pillars') && (document.getElementById('d-wellness-pillars').textContent = (data.wellness?.pillars||[]).length);
+  d('d-hours')        && (document.getElementById('d-hours').textContent        = (data.hours||[]).length);
 }
 
 function updateMarketingOverviewFromStats(stats){
