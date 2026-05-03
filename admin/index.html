@@ -175,6 +175,22 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
 .docs-card p { font-size:.76rem; color:#666; line-height:1.7; margin-bottom:14px; }
 .docs-actions { display:flex; gap:10px; flex-wrap:wrap; }
 
+/* MARKETING HUB */
+.marketing-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:16px; }
+.marketing-card { background:#fff; border:1px solid var(--mist); padding:20px 22px; }
+.marketing-card h4 { font-size:.62rem; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:12px; font-weight:400; }
+.marketing-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.marketing-kpi { background:var(--cream); border:1px solid var(--mist); padding:14px 12px; }
+.marketing-kpi-num { font-family:var(--serif); font-size:1.3rem; color:var(--bark); line-height:1.1; }
+.marketing-kpi-lbl { font-size:.54rem; letter-spacing:.18em; text-transform:uppercase; color:#999; margin-top:4px; }
+.marketing-checklist { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.marketing-checklist li { font-size:.76rem; color:#555; display:flex; align-items:center; gap:10px; }
+.marketing-checklist input { accent-color:var(--gold); }
+.studio-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.studio-output { min-height:240px; }
+.studio-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.hint-text { font-size:.68rem; color:#999; margin-top:8px; }
+
 @media (max-width:900px){
   .sidebar { width:200px; }
   .main { margin-left:200px; padding:28px 24px; }
@@ -184,6 +200,8 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
   .analytics-grid { grid-template-columns:1fr 1fr; }
   .analytics-tables { grid-template-columns:1fr; }
   .docs-grid { grid-template-columns:1fr; }
+  .marketing-grid, .studio-grid { grid-template-columns:1fr; }
+  .marketing-kpis { grid-template-columns:1fr 1fr; }
 }
 </style>
 </head>
@@ -217,6 +235,23 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       <div class="nav-item" data-page="analytics">
         <svg viewBox="0 0 24 24"><path d="M3 17h2v4H3v-4zm4-6h2v10H7V11zm4 3h2v7h-2v-7zm4-8h2v15h-2V6zm4 5h2v10h-2V11z"/></svg>
         Analytics
+      </div>
+      <div class="sidebar-section">Marketing</div>
+      <div class="nav-item" data-page="marketing-overview">
+        <svg viewBox="0 0 24 24"><path d="M4 5h16v4H4V5zm0 5h10v4H4v-4zm0 5h7v4H4v-4zm12-5h4v9h-4v-9z"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" data-page="content-studio">
+        <svg viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm2 4h14v12H5V8zm2 2v2h10v-2H7zm0 4v2h7v-2H7z"/></svg>
+        Content Studio
+      </div>
+      <div class="nav-item" data-page="inquiry-toolkit">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 9H6V9h12v2zm0-3H6V6h12v2zm-7 6H6v-2h5v2z"/></svg>
+        Inquiry Toolkit
+      </div>
+      <div class="nav-item" data-page="seo">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        SEO Manager
       </div>
 
       <div class="sidebar-section">Content</div>
@@ -270,10 +305,6 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
       </div>
 
       <div class="sidebar-section">Settings</div>
-      <div class="nav-item" data-page="seo">
-        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-        SEO
-      </div>
       <div class="nav-item" data-page="footer">
         <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm-7 3h2v2h-2V7zm0 3h2v2h-2v-2zM10 7h2v2h-2V7zm0 3h2v2h-2v-2zM7 7h2v2H7V7zm0 3h2v2H7v-2zm-1 5h12v-2H6v2zm14-5h-2V7h2v3z"/></svg>
         Footer
@@ -356,6 +387,115 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
           <ul class="analytics-list" id="analytics-daily"></ul>
         </div>
       </div>
+    </div>
+
+    <!-- MARKETING OVERVIEW -->
+    <div class="page" id="page-marketing-overview">
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <div class="page-title">Marketing Overview</div>
+          <div class="page-sub">Traffic snapshot plus SEO operating checklist.</div>
+        </div>
+      </div>
+      <div class="marketing-grid">
+        <div class="marketing-card">
+          <h4>Traffic Snapshot</h4>
+          <div class="marketing-kpis">
+            <div class="marketing-kpi"><div class="marketing-kpi-num" id="mo-views">0</div><div class="marketing-kpi-lbl">Views</div></div>
+            <div class="marketing-kpi"><div class="marketing-kpi-num" id="mo-unique">0</div><div class="marketing-kpi-lbl">Unique Visitors</div></div>
+            <div class="marketing-kpi"><div class="marketing-kpi-num" id="mo-clicks">0</div><div class="marketing-kpi-lbl">Clicks</div></div>
+            <div class="marketing-kpi"><div class="marketing-kpi-num" id="mo-mobile">0%</div><div class="marketing-kpi-lbl">Mobile Share</div></div>
+          </div>
+          <div class="hint-text" id="mo-updated">Last updated: —</div>
+        </div>
+        <div class="marketing-card">
+          <h4>SEO Health Checklist</h4>
+          <ul class="marketing-checklist">
+            <li><input type="checkbox" id="m-seo-title" disabled> Meta title configured</li>
+            <li><input type="checkbox" id="m-seo-description" disabled> Meta description configured</li>
+            <li><input type="checkbox" id="m-seo-og" disabled> OG image configured</li>
+            <li><input type="checkbox" id="m-seo-sitemap"> Sitemap.xml validated</li>
+            <li><input type="checkbox" id="m-seo-gbp"> Google Business Profile updated</li>
+            <li><input type="checkbox" id="m-seo-gsc"> Search Console connected</li>
+          </ul>
+          <div class="hint-text">Manual checks are saved with the rest of CMS settings.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT STUDIO -->
+    <div class="page" id="page-content-studio">
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <div class="page-title">Content Studio</div>
+          <div class="page-sub">Generate Instagram captions and Google Business copy from one photo description.</div>
+        </div>
+      </div>
+      <div class="studio-grid">
+        <div class="form-section">
+          <div class="form-section-title">Prompt Inputs</div>
+          <div class="field">
+            <label>Photo Description</label>
+            <textarea id="cs-photo-desc" rows="6" placeholder="Describe the photo, mood, and what happened."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Platform</label>
+              <select id="cs-platform">
+                <option value="instagram">Instagram Caption</option>
+                <option value="google-business">Google Business Post</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Tone</label>
+              <select id="cs-tone">
+                <option value="warm">Warm</option>
+                <option value="luxury">Luxury</option>
+                <option value="playful">Playful</option>
+                <option value="informative">Informative</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Call To Action (optional)</label>
+            <input type="text" id="cs-cta" placeholder="Book direct via WhatsApp for best rates.">
+          </div>
+          <div class="field">
+            <label>Keywords (optional)</label>
+            <input type="text" id="cs-keywords" placeholder="yoga retreat panama, boutique hotel santa catalina">
+          </div>
+          <div class="studio-actions">
+            <button class="btn btn-primary" id="cs-generate-btn" onclick="generateContentStudio()">Generate Copy</button>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">Generated Copy</div>
+          <div class="field">
+            <label>Output</label>
+            <textarea id="cs-output" class="studio-output" placeholder="Generated copy appears here..." readonly></textarea>
+          </div>
+          <div class="studio-actions">
+            <button class="btn btn-outline" onclick="copyGeneratedContent()">Copy Text</button>
+            <button class="btn btn-outline" onclick="saveGeneratedAsTemplate()">Save As Template</button>
+          </div>
+          <div class="hint-text">Uses Anthropic via secure server-side function when configured.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INQUIRY TOOLKIT -->
+    <div class="page" id="page-inquiry-toolkit">
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <div class="page-title">Inquiry Toolkit</div>
+          <div class="page-sub">Reusable WhatsApp and email replies for common guest requests.</div>
+        </div>
+        <div class="top-bar-actions">
+          <button class="btn btn-outline" onclick="addInquiryTemplate()">+ Add Template</button>
+          <button class="btn btn-primary" onclick="saveAll()">Save Changes</button>
+        </div>
+      </div>
+      <div id="inquiry-list"></div>
     </div>
 
     <!-- HERO -->
@@ -890,6 +1030,27 @@ const DEFAULTS = {
     sub:   'A glimpse into the magic.',
     items: []
   },
+  marketing: {
+    seoChecklist: {
+      sitemapReady: true,
+      gbpConnected: false,
+      gscConnected: false
+    },
+    inquiryTemplates: [
+      {
+        channel: 'whatsapp',
+        title: 'Check-in and early arrival',
+        subject: '',
+        body: 'Hi {{guest_name}}, check-in is from 3:00 PM. If you arrive earlier, we can store your bags and let you enjoy the pool while your room is prepared.'
+      },
+      {
+        channel: 'email',
+        title: 'How to get to Villa Coco',
+        subject: 'Directions to Villa Coco',
+        body: 'Hi {{guest_name}}, thank you for booking with Villa Coco. The easiest route is Panama City to Santa Catalina by private transfer or bus to Sona + taxi. We can help coordinate your transfer.'
+      }
+    ]
+  },
   colors: {
     ink:'#1c1c1a', bark:'#2b2420', sand:'#f2ede4', cream:'#faf8f3',
     mist:'#e8e2d8', gold:'#b8965a', ocean:'#1e3a3f', foam:'#c8d8d4',
@@ -1120,6 +1281,7 @@ function renderAll(){
   renderExperiences(); renderWellness(); renderFood(); renderHours();
   renderPool(); renderPackages(); renderTestimonials(); renderGallery();
   renderSeo(); renderFooter(); renderColors(); renderVideos();
+  renderMarketingOverview(); renderInquiryToolkit();
 }
 
 function renderVideos(){
@@ -1381,6 +1543,60 @@ function renderFooter(){
   val('footer-address', f.address); val('footer-copy', f.copy);
 }
 
+function renderMarketingOverview(){
+  const checklist = data.marketing?.seoChecklist || {};
+  const seo = data.seo || {};
+  const hasTitle = !!(seo.title || '').trim();
+  const hasDescription = !!(seo.description || '').trim();
+  const hasOg = !!(seo.ogImage || '').trim();
+  const set = (id, checked)=>{
+    const el = document.getElementById(id);
+    if(el) el.checked = !!checked;
+  };
+  set('m-seo-title', hasTitle);
+  set('m-seo-description', hasDescription);
+  set('m-seo-og', hasOg);
+  set('m-seo-sitemap', checklist.sitemapReady !== false);
+  set('m-seo-gbp', !!checklist.gbpConnected);
+  set('m-seo-gsc', !!checklist.gscConnected);
+}
+
+function renderInquiryToolkit(){
+  const list = document.getElementById('inquiry-list');
+  if(!list) return;
+  const templates = data.marketing?.inquiryTemplates || [];
+  list.innerHTML = templates.map((tpl,i)=>`
+    <div class="repeater-item">
+      <div class="repeater-header">
+        <div class="repeater-title">${tpl.title||'Template '+(i+1)}</div>
+        <button class="repeater-del" onclick="removeInquiryTemplate(${i})">Remove</button>
+      </div>
+      <div class="form-row three">
+        <div class="field">
+          <label>Channel</label>
+          <select id="inq-channel-${i}">
+            <option value="whatsapp" ${tpl.channel==='whatsapp'?'selected':''}>WhatsApp</option>
+            <option value="email" ${tpl.channel==='email'?'selected':''}>Email</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column:span 2">
+          <label>Template Title</label>
+          <input type="text" id="inq-title-${i}" value="${tpl.title||''}">
+        </div>
+      </div>
+      <div class="field">
+        <label>Email Subject (optional)</label>
+        <input type="text" id="inq-subject-${i}" value="${tpl.subject||''}">
+      </div>
+      <div class="field">
+        <label>Message Body</label>
+        <textarea id="inq-body-${i}" rows="5">${tpl.body||''}</textarea>
+      </div>
+    </div>
+  `).join('');
+  list.innerHTML += `<button class="btn btn-outline repeater-add" onclick="addInquiryTemplate()">+ Add Template</button>`;
+}
+
 /* ═══════════════════════════════════════
    SEO PREVIEW
 ═══════════════════════════════════════ */
@@ -1505,6 +1721,19 @@ function collectAll(){
       title: g(`vid-title-${i}`)
     }))
   };
+  data.marketing = {
+    seoChecklist: {
+      sitemapReady: gc('m-seo-sitemap'),
+      gbpConnected: gc('m-seo-gbp'),
+      gscConnected: gc('m-seo-gsc')
+    },
+    inquiryTemplates: ((data.marketing||{}).inquiryTemplates||[]).map((_,i)=>({
+      channel: g(`inq-channel-${i}`) || 'whatsapp',
+      title: g(`inq-title-${i}`),
+      subject: g(`inq-subject-${i}`),
+      body: document.getElementById(`inq-body-${i}`)?.value||''
+    }))
+  };
 }
 
 /* ═══════════════════════════════════════
@@ -1524,6 +1753,23 @@ function addTestimonial(){ collectAll(); data.testimonials.push({stars:5,text:''
 function removeTestimonial(i){ collectAll(); data.testimonials.splice(i,1); renderTestimonials(); }
 function addGalleryItem(){ collectAll(); data.gallery.push({url:'',label:''}); renderGallery(); }
 function removeGalleryItem(i){ collectAll(); data.gallery.splice(i,1); renderGallery(); }
+function addInquiryTemplate(){
+  collectAll();
+  if(!data.marketing) data.marketing = {};
+  if(!data.marketing.inquiryTemplates) data.marketing.inquiryTemplates = [];
+  data.marketing.inquiryTemplates.push({
+    channel:'whatsapp',
+    title:'New Template',
+    subject:'',
+    body:''
+  });
+  renderInquiryToolkit();
+}
+function removeInquiryTemplate(i){
+  collectAll();
+  data.marketing.inquiryTemplates.splice(i,1);
+  renderInquiryToolkit();
+}
 
 /* ═══════════════════════════════════════
    DASHBOARD
@@ -1533,6 +1779,24 @@ function updateDashboard(){
   d('d-rooms')        && (document.getElementById('d-rooms').textContent        = (data.rooms||[]).length);
   d('d-packages')     && (document.getElementById('d-packages').textContent     = (data.packages||[]).length);
   d('d-testimonials') && (document.getElementById('d-testimonials').textContent = (data.testimonials||[]).length);
+}
+
+function updateMarketingOverviewFromStats(stats){
+  const views = Number(stats?.totals?.views) || 0;
+  const uniqueVisitors = Number(stats?.totals?.uniqueVisitors) || 0;
+  const clicks = Number(stats?.totals?.clicks) || 0;
+  const mobileViews = Number(stats?.byDevice?.mobile) || 0;
+  const mobileShare = views ? (mobileViews / views) * 100 : 0;
+  const updatedAt = stats?.updatedAt ? new Date(stats.updatedAt).toLocaleString() : '—';
+  const setText = (id, value)=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = value;
+  };
+  setText('mo-views', views.toLocaleString());
+  setText('mo-unique', uniqueVisitors.toLocaleString());
+  setText('mo-clicks', clicks.toLocaleString());
+  setText('mo-mobile', `${mobileShare.toFixed(0)}%`);
+  setText('mo-updated', `Last updated: ${updatedAt}`);
 }
 
 function renderAnalyticsList(id, rows, keyProp){
@@ -1588,14 +1852,16 @@ function renderAnalytics(stats){
 
 async function loadAnalytics(showToast = false){
   if(localDraftMode){
-    renderAnalytics({
+    const emptyStats = {
       totals:{ views:0, uniqueVisitors:0, clicks:0 },
       byDevice:{ desktop:0, mobile:0, tablet:0, other:0 },
       topPages:[],
       topClicks:[],
       daily:[],
       updatedAt:null
-    });
+    };
+    renderAnalytics(emptyStats);
+    updateMarketingOverviewFromStats(emptyStats);
     document.getElementById('analytics-updated').textContent = 'Last updated: unavailable in local draft mode';
     return;
   }
@@ -1610,10 +1876,96 @@ async function loadAnalytics(showToast = false){
     }
     const stats = await res.json();
     renderAnalytics(stats);
+    updateMarketingOverviewFromStats(stats);
     if(showToast) toast('Analytics refreshed.', 'success');
   }catch(e){
     if(showToast) toast('Could not load analytics yet.', 'error');
   }
+}
+
+async function generateContentStudio(){
+  if(localDraftMode){
+    toast('AI content generation requires live CMS API.', 'info');
+    return;
+  }
+  const btn = document.getElementById('cs-generate-btn');
+  const out = document.getElementById('cs-output');
+  const photoDescription = document.getElementById('cs-photo-desc')?.value?.trim() || '';
+  const platform = document.getElementById('cs-platform')?.value || 'instagram';
+  const tone = document.getElementById('cs-tone')?.value || 'warm';
+  const cta = document.getElementById('cs-cta')?.value?.trim() || '';
+  const keywords = document.getElementById('cs-keywords')?.value?.trim() || '';
+  if(!photoDescription){
+    toast('Please describe the photo first.', 'error');
+    return;
+  }
+  if(btn){ btn.disabled = true; btn.textContent = 'Generating...'; }
+  if(out) out.value = '';
+  try{
+    const res = await fetchCms('generate-content', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'X-Admin-Password': sessionPassword },
+      body: JSON.stringify({ photoDescription, platform, tone, cta, keywords })
+    });
+    if(!res){
+      toast('Could not reach AI generation endpoint.', 'error');
+      return;
+    }
+    const payload = await res.json().catch(()=>({}));
+    if(!res.ok || !payload?.text){
+      toast(payload?.error || 'Generation failed.', 'error');
+      return;
+    }
+    if(out) out.value = payload.text;
+    toast('Content generated.', 'success');
+  }catch(e){
+    toast('Generation failed.', 'error');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Generate Copy'; }
+  }
+}
+
+async function copyGeneratedContent(){
+  const out = document.getElementById('cs-output');
+  const text = out?.value || '';
+  if(!text.trim()){
+    toast('Nothing to copy yet.', 'info');
+    return;
+  }
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('Copied to clipboard.', 'success');
+  }catch(e){
+    toast('Copy failed. Select text and copy manually.', 'error');
+  }
+}
+
+function saveGeneratedAsTemplate(){
+  const out = document.getElementById('cs-output');
+  const generated = out?.value?.trim() || '';
+  if(!generated){
+    toast('Generate content before saving a template.', 'info');
+    return;
+  }
+  const platform = document.getElementById('cs-platform')?.value || 'instagram';
+  const defaultTitle = platform === 'google-business' ? 'Google Business Post' : 'Instagram Caption';
+  const enteredTitle = window.prompt('Template title:', defaultTitle);
+  if(enteredTitle === null) return;
+  const title = enteredTitle.trim() || defaultTitle;
+  const channel = platform === 'google-business' ? 'email' : 'whatsapp';
+  const subject = channel === 'email' ? title : '';
+
+  collectAll();
+  if(!data.marketing) data.marketing = {};
+  if(!data.marketing.inquiryTemplates) data.marketing.inquiryTemplates = [];
+  data.marketing.inquiryTemplates.unshift({
+    channel,
+    title,
+    subject,
+    body: generated
+  });
+  renderInquiryToolkit();
+  toast('Template added to Inquiry Toolkit. Save changes to publish.', 'success');
 }
 
 /* ═══════════════════════════════════════

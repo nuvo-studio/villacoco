@@ -17,6 +17,8 @@ const MAX_ITEMS = 50;
 const MAX_DEPTH = 8;
 const MAX_ANALYTICS_FIELD = 120;
 const MAX_VISITOR_ID = 64;
+const MAX_AI_PROMPT = 1200;
+const MAX_AI_FIELD = 180;
 const ANALYTICS_KEY = 'cms_analytics';
 
 export async function onRequest(context) {
@@ -162,6 +164,39 @@ export async function onRequest(context) {
     }
   }
 
+  if (action === 'generate-content') {
+    if (!isAuthorized(request, env)) {
+      return json({ error: 'Unauthorized' }, 401, headers);
+    }
+    try {
+      const payload = await request.json();
+      const photoDescription = normalizePrompt(payload?.photoDescription, MAX_AI_PROMPT);
+      const platform = normalizeAiField(payload?.platform, 24, 'instagram');
+      const tone = normalizeAiField(payload?.tone, 32, 'warm');
+      const cta = normalizePrompt(payload?.cta, MAX_AI_FIELD);
+      const keywords = normalizePrompt(payload?.keywords, MAX_AI_FIELD);
+
+      if (!photoDescription) {
+        return json({ error: 'photoDescription is required' }, 400, headers);
+      }
+      if (!['instagram', 'google-business'].includes(platform)) {
+        return json({ error: 'Invalid platform' }, 400, headers);
+      }
+
+      const generated = await generateMarketingCopy(env, {
+        photoDescription,
+        platform,
+        tone,
+        cta,
+        keywords,
+      });
+
+      return json({ success: true, text: generated }, 200, headers);
+    } catch (e) {
+      return json({ error: e?.message || 'Failed to generate content' }, 500, headers);
+    }
+  }
+
   if (!isAuthorized(request, env)) {
     return json({ error: 'Unauthorized' }, 401, headers);
   }
@@ -274,6 +309,75 @@ function normalizeDevice(value) {
   const v = typeof value === 'string' ? value.trim().toLowerCase() : '';
   if (v === 'mobile' || v === 'tablet' || v === 'desktop') return v;
   return 'other';
+}
+
+function normalizePrompt(value, maxLen) {
+  if (typeof value !== 'string') return '';
+  return value.trim().replace(/\s+/g, ' ').slice(0, maxLen);
+}
+
+function normalizeAiField(value, maxLen, fallback = '') {
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim().toLowerCase();
+  return (trimmed || fallback).slice(0, maxLen);
+}
+
+async function generateMarketingCopy(env, input) {
+  if (!env.ANTHROPIC_API_KEY) {
+    throw new Error('Server missing ANTHROPIC_API_KEY');
+  }
+  const model = env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
+  const system = [
+    'You are a hospitality marketing copywriter for Villa Coco, a boutique hotel in Santa Catalina, Panama.',
+    'Write concise, premium, warm copy focused on direct bookings and experience.',
+    'Do not use hashtags unless explicitly useful.',
+    'Return plain text only.',
+  ].join(' ');
+  const userPrompt = [
+    `Platform: ${input.platform}`,
+    `Tone: ${input.tone}`,
+    `Photo description: ${input.photoDescription}`,
+    `Preferred CTA: ${input.cta || 'Book direct via WhatsApp or website.'}`,
+    `Optional keywords: ${input.keywords || 'boutique hotel santa catalina, surf, wellness, coiba'}`,
+    '',
+    input.platform === 'google-business'
+      ? 'Write one Google Business post (60-120 words), with a clear CTA and local relevance.'
+      : 'Write one Instagram caption (50-120 words), cinematic and authentic, ending with a direct-booking CTA.',
+  ].join('\n');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 500,
+      temperature: 0.7,
+      system,
+      messages: [{ role: 'user', content: userPrompt }],
+    }),
+  });
+
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const err = await res.json();
+      detail = err?.error?.message || err?.message || '';
+    } catch (e) {
+      detail = await res.text();
+    }
+    throw new Error(`AI provider error (${res.status})${detail ? `: ${detail}` : ''}`);
+  }
+
+  const data = await res.json();
+  const text = Array.isArray(data?.content)
+    ? data.content.filter(c => c?.type === 'text').map(c => c.text || '').join('\n').trim()
+    : '';
+  if (!text) throw new Error('AI provider returned empty content');
+  return text.slice(0, 4000);
 }
 
 function formatAnalytics(analytics) {
