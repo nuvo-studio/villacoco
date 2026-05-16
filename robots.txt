@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+# Public sitemap for crawlers
+Sitemap: https://villacocopanama.com/sitemap.xml
