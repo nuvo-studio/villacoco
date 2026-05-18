@@ -10,6 +10,7 @@
  * POST /api/cms?action=track  → track pageview/click event
  * POST /api/cms        → save new content (auth required)
  * POST /api/cms?action=revert → revert to previous save (auth required)
+ * POST /api/cms?action=images-direct-upload → mint Cloudflare Images one-time URL (auth required)
  */
 
 const MAX_JSON_CHARS = 300_000;
@@ -232,6 +233,17 @@ export async function onRequest(context) {
     }
   }
 
+  if (action === 'images-direct-upload') {
+    try {
+      const out = await createImagesDirectUpload(env);
+      return json(out, 200, headers);
+    } catch (e) {
+      const msg = e?.message || 'Images direct upload failed';
+      const status = /not configured/i.test(msg) ? 503 : 500;
+      return json({ error: msg }, status, headers);
+    }
+  }
+
   try {
     const body = await request.json();
     const validation = validatePayload(body);
@@ -255,6 +267,47 @@ export async function onRequest(context) {
 
 function isAuthorized(request, env) {
   return request.headers.get('X-Admin-Password') === env.ADMIN_PASSWORD;
+}
+
+/**
+ * Cloudflare Images: request a one-time upload URL (Direct Creator Upload).
+ * Env: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_IMAGES_API_TOKEN (Images:Edit).
+ * Client POSTs multipart form field "file" to uploadURL; response includes variant URLs.
+ */
+async function createImagesDirectUpload(env) {
+  const accountId = env.CLOUDFLARE_ACCOUNT_ID;
+  const token = env.CLOUDFLARE_IMAGES_API_TOKEN;
+  if (!accountId || !token) {
+    throw new Error(
+      'Cloudflare Images is not configured (set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_IMAGES_API_TOKEN on Pages)'
+    );
+  }
+
+  const form = new FormData();
+  form.append('requireSignedURLs', 'false');
+
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v2/direct_upload`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    }
+  );
+
+  const data = await res.json().catch(() => ({}));
+  if (!data.success) {
+    const msg = (data.errors || []).map(e => e.message).join('; ') || `Cloudflare Images API HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  const id = data.result?.id;
+  const uploadURL = data.result?.uploadURL;
+  if (!id || !uploadURL) {
+    throw new Error('Unexpected Images API response (missing id or uploadURL)');
+  }
+
+  return { success: true, id, uploadURL };
 }
 
 async function readAnalytics(env) {

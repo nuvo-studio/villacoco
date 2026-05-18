@@ -103,6 +103,11 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
 /* IMAGE PREVIEW */
 .img-preview { width:100%; height:120px; object-fit:cover; display:block; margin-top:8px; border:1px solid var(--mist); background:var(--mist); }
 
+.gallery-photo-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:4px; }
+.gallery-photo-actions input[type="url"] { flex:1; min-width:200px; padding:10px 12px; border:1px solid var(--mist); background:var(--cream); font-family:var(--sans); font-size:.82rem; color:var(--ink); outline:none; }
+.gallery-photo-actions input[type="url"]:focus { border-color:var(--gold); }
+.gallery-photo-actions .btn { padding:10px 16px; }
+
 /* REPEATER */
 .repeater-item { background:var(--cream); border:1px solid var(--mist); padding:20px 22px; margin-bottom:10px; position:relative; }
 .repeater-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
@@ -542,7 +547,7 @@ html, body { height:100%; font-family:var(--sans); background:var(--cream); colo
     <!-- GALLERY -->
     <div class="page" id="page-gallery">
       <div class="top-bar">
-        <div class="top-bar-left"><div class="page-title">Gallery</div><div class="page-sub">The expandable photo strip. 5 photos recommended.</div></div>
+        <div class="top-bar-left"><div class="page-title">Gallery</div><div class="page-sub">The expandable photo strip. Upload to Cloudflare Images or paste a URL. Five photos recommended.</div></div>
         <div class="top-bar-actions"><button class="btn btn-outline" onclick="addGalleryItem()">+ Add Photo</button><button class="btn btn-primary" onclick="saveAll()">Save Changes</button></div>
       </div>
       <div id="gallery-list"></div>
@@ -1332,8 +1337,17 @@ function renderGallery(){
         <button class="repeater-del" onclick="removeGalleryItem(${i})">Remove</button>
       </div>
       <div class="form-row">
-        <div class="field"><label>Photo URL</label><input type="url" id="gal-url-${i}" value="${g.url||''}" placeholder="https://..."></div>
-        <div class="field"><label>Label</label><input type="text" id="gal-lbl-${i}" value="${g.label||''}"></div>
+        <div class="field">
+          <label>Photo</label>
+          <small class="field-hint">Upload stores on Cloudflare Images. You can still paste any image URL.</small>
+          <div class="gallery-photo-actions">
+            <input type="url" id="gal-url-${i}" value="${escapeAttr(g.url||'')}" placeholder="https://…">
+            <input type="file" id="gal-file-${i}" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleGalleryImageUpload(${i},this)">
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('gal-file-${i}').click()">Upload image</button>
+          </div>
+          <img id="gal-prev-${i}" class="img-preview" alt="" style="display:${(g.url||'').trim()?'block':'none'}" src="${escapeAttr((g.url||'').trim())}">
+        </div>
+        <div class="field"><label>Label</label><input type="text" id="gal-lbl-${i}" value="${escapeAttr(g.label||'')}"></div>
       </div>
     </div>`).join('');
 }
@@ -1372,6 +1386,73 @@ function updateSeoPreview(){
 function g(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
 function gc(id){ const el=document.getElementById(id); return el?el.checked:false; }
 function g_color(name){ const el=document.getElementById('color-'+name); return el?el.value:''; }
+function escapeAttr(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+async function handleGalleryImageUpload(index, fileInput){
+  const file = fileInput.files && fileInput.files[0];
+  if(!file) return;
+  const okTypes = ['image/jpeg','image/png','image/webp'];
+  if(!okTypes.includes(file.type)){
+    toast('Use JPG, PNG, or WebP.', 'error');
+    fileInput.value = '';
+    return;
+  }
+  const maxBytes = 10 * 1024 * 1024;
+  if(file.size > maxBytes){
+    toast('Image must be 10 MB or smaller.', 'error');
+    fileInput.value = '';
+    return;
+  }
+  if(localDraftMode){
+    toast('Connect to Cloudflare to upload images.', 'error');
+    fileInput.value = '';
+    return;
+  }
+  toast('Uploading image…', 'info');
+  try{
+    const res = await fetchCms('images-direct-upload', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'X-Admin-Password': sessionPassword },
+      body:'{}'
+    });
+    if(!res) throw new Error('CMS API not reachable');
+    const j = await res.json().catch(()=>({}));
+    if(res.status === 401){
+      toast('Unauthorized. Sign out and sign in again.', 'error');
+      fileInput.value = '';
+      return;
+    }
+    if(!res.ok){
+      throw new Error(j.error || 'Could not start upload');
+    }
+    const uploadURL = j.uploadURL;
+    if(!uploadURL) throw new Error('Missing upload URL from server');
+    const fd = new FormData();
+    fd.append('file', file);
+    const up = await fetch(uploadURL, { method:'POST', body: fd });
+    const upJ = await up.json().catch(()=>({}));
+    if(!up.ok || upJ.success === false){
+      const err = (upJ.errors||[]).map(e=>e.message).join('; ') || upJ.error || ('Upload failed ('+up.status+')');
+      throw new Error(err);
+    }
+    const variants = upJ.result && upJ.result.variants;
+    let finalUrl = '';
+    if(Array.isArray(variants) && variants.length){
+      finalUrl = variants.find(u=>/\/public(\?|$)/i.test(String(u))) || variants[0];
+    }
+    if(!finalUrl) throw new Error('Upload succeeded but no image URL was returned. Check Cloudflare Images variants (need a "public" variant).');
+    const urlIn = document.getElementById('gal-url-'+index);
+    if(urlIn) urlIn.value = finalUrl;
+    const prev = document.getElementById('gal-prev-'+index);
+    if(prev){ prev.src = finalUrl; prev.style.display = 'block'; }
+    toast('Image uploaded. Click Save changes to publish.', 'success');
+  }catch(e){
+    toast(e.message || 'Upload failed', 'error');
+  }
+  fileInput.value = '';
+}
 
 function collectAll(){
   data.seo = {
